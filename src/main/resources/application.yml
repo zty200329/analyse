@@ -1,0 +1,47 @@
+spring:
+  #jpa
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+  #mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/analyse?useUnicode=true&characterEncoding=utf8&useSSL=false
+    username: root
+    password: 741623
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  main:
+    allow-bean-definition-overriding: true
+  #mail
+  mail:
+    host: smtp.qq.com
+    username: 1602827223@qq.com
+    password: vodkjzdsouwtihcd
+    default-encoding: UTF-8
+#tomcat
+server:
+  max-http-header-size: 10485760
+  port: 8001
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 100
+    max-http-post-size: 10485760
+    min-spare-threads: 20
+  servlet:
+    session:
+      timeout: 3600s
+#jwt
+jwt:
+  secret: skrd
+  expiration: 36000000
+  tokenStart: "Bearer "
+  tokenName: Authorization
+  Not_interception_path: "/data/*,/user/login,/swagger/*,/webjars/*,/v2/*,/configuration/*,/images/*,/favicon.ico"
+
+
+
+
