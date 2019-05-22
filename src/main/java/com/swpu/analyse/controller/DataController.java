@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Calendar;
 
 /**
  * @author cyg
@@ -48,6 +49,12 @@ public class DataController {
     public ResultVo insertGmLq(ScaleDtoInsert scaleDtoInsert) {
 
         return dataService.insertGmLq(scaleDtoInsert);
+    }
+
+    @PostMapping("/selectGmLq")
+    @ApiOperation(value = "查询招生规模/招生情况 1-(全国) 2-(本校)")
+    public ResultVo selectGmLq(Integer type) {
+        return dataService.selectGmLq(type);
     }
 
     @PostMapping("/updateGmLq")

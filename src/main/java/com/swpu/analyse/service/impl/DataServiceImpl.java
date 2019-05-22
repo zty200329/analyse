@@ -62,6 +62,7 @@ public class DataServiceImpl implements DataService {
     public ResultVo upload(MultipartFile file, String fileName, Integer type) throws IOException {
         basicMapper.deleteAll();
         ssyzyBkMapper.deleteAll();
+        ssyzyLqMapper.deleteAll();
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
         }
@@ -98,11 +99,29 @@ public class DataServiceImpl implements DataService {
         String id = RandomUtil.getRandomInteger(8);
         Scale scale = new Scale();
         scale.setId(id);
-        scale.setTime((new Date().getYear() + 1900) + "");
+        scale.setTime((Calendar.getInstance().get(Calendar.YEAR)) + "");
         scale.setTotalBs(scaleDtoInsert.getTotalBs());
         BeanUtils.copyProperties(scaleDtoInsert, scale);
         scaleMapper.save(scale);
         return ResultVoUtil.success("新增成功");
+    }
+
+    @Override
+    public ResultVo selectGmLq(Integer type) {
+        Sort.Order orderTime = Sort.Order.desc("time");
+        Sort.Order orderType = Sort.Order.desc("type");
+        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        orders.add(orderTime);
+        orders.add(orderType);
+        Sort sort = Sort.by(orders);
+        List<Scale> scales = new ArrayList<>();
+        if (type == 1) {
+            scales = scaleMapper.findByType(type, sort);
+        } else {
+            scales = scaleMapper.findAll(sort);
+            scales.removeIf(scale -> scale.getType() == 1);
+        }
+        return ResultVoUtil.success(scales);
     }
 
     @Override
@@ -166,6 +185,7 @@ public class DataServiceImpl implements DataService {
             }
             return ResultVoUtil.success(ssYzyBkVos);
         }
+
         List<Bm> bms = bmMapper.findByTime(time);
         if (bms.size() == 0) {
             return ResultVoUtil.error("没有数据");
@@ -211,7 +231,7 @@ public class DataServiceImpl implements DataService {
                                 bySylQ++;
                             }
                             if (university.getName().equals("西南石油大学")) {
-                                if (bm.getByny().contains(new Date().getYear() + 1900 + "")) {
+                                if (bm.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
                                     bxYjQ++;
                                 } else {
                                     bxWjQ++;
@@ -242,7 +262,7 @@ public class DataServiceImpl implements DataService {
                                 bySylF++;
                             }
                             if (university.getName().equals("西南石油大学")) {
-                                if (bm.getByny().contains(new Date().getYear() + 1900 + "")) {
+                                if (bm.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
                                     bxYjF++;
                                 } else {
                                     bxWjF++;
@@ -286,11 +306,6 @@ public class DataServiceImpl implements DataService {
             ssYzyBkVos.add(ssYzyBkVoQ);
             ssYzyBkVos.add(ssYzyBkVoF);
         }
-        /* int total = 0;
-        for (SsYzyBkVo ssYzyBkVo : ssYzyBkVos) {
-            total += ssYzyBkVo.getTotal();
-        }
-        System.out.println(total);*/
         for (SsYzyBkVo ssYzyBkVo : ssYzyBkVos) {
             SsYzyBk ssYzyBk = new SsYzyBk();
             ssYzyBk.setId(RandomUtil.getRandomInteger(10));
@@ -303,41 +318,172 @@ public class DataServiceImpl implements DataService {
 
     @Override
     public ResultVo ssYzyLq(String time) {
+        List<SsYzyLqVo> ssYzyLqVos = new ArrayList<>();
+        Sort.Order orderYxsdm = Sort.Order.asc("yxsdm");
+        Sort.Order orderZzmc = Sort.Order.asc("zzmc");
+        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        orders.add(orderYxsdm);
+        orders.add(orderZzmc);
+        Sort sort1 = Sort.by(orders);
+        List<SsYzyLq> ssYzyLqs = ssyzyLqMapper.findAllByTime(time, sort1);
+      /*
+      //先查数据库,没有再重新计算
+      if (ssYzyLqs.size() != 0) {
+            for (SsYzyLq ssYzyLq : ssYzyLqs) {
+                SsYzyLqVo ssYzyLqVo = new SsYzyLqVo();
+                BeanUtils.copyProperties(ssYzyLq, ssYzyLqVo);
+                ssYzyLqVos.add(ssYzyLqVo);
+            }
+            return ResultVoUtil.success(ssYzyLqVos);
+        }*/
+
         Sort.Order order = Sort.Order.asc("departmentId");
-        Sort sort = Sort.by(order);
-        List<Major> majors = majorMapper.findAll(sort);
+        Sort sort2 = Sort.by(order);
+        List<Major> majors = majorMapper.findAll(sort2);
         List<Lq> lqs = lqMapper.findAll();
         if (lqs.size() == 0) {
             return ResultVoUtil.error("没有数据");
         }
         for (Major major : majors) {
-            SsYzyLqVo ssYzyLqVoQ = new SsYzyLqVo();
-            SsYzyLqVo ssYzyLqVoF = new SsYzyLqVo();
+            SsYzyLqVo ssyzyLqVoQ = new SsYzyLqVo();
+            SsYzyLqVo ssyzyLqVoF = new SsYzyLqVo();
             Department department = departmentMapper.getOne(major.getDepartmentId());
-            ssYzyLqVoQ.setYxsdm(department.getId());
-            ssYzyLqVoQ.setYxsmc(department.getName());
-            ssYzyLqVoQ.setBkxxfs("全日制");
-            ssYzyLqVoQ.setZzdm(major.getId());
-            ssYzyLqVoQ.setZzmc(major.getName());
-            ssYzyLqVoF.setYxsdm(department.getId());
-            ssYzyLqVoF.setYxsmc(department.getName());
-            ssYzyLqVoF.setBkxxfs("非全日制");
-            ssYzyLqVoF.setZzdm(major.getId());
-            ssYzyLqVoF.setZzmc(major.getName());
+            ssyzyLqVoQ.setYxsdm(department.getId());
+            ssyzyLqVoQ.setYxsmc(department.getName());
+            ssyzyLqVoQ.setBkxxfs("全日制");
+            ssyzyLqVoQ.setZzdm(major.getId());
+            ssyzyLqVoQ.setZzmc(major.getName());
+            ssyzyLqVoF.setYxsdm(department.getId());
+            ssyzyLqVoF.setYxsmc(department.getName());
+            ssyzyLqVoF.setBkxxfs("非全日制");
+            ssyzyLqVoF.setZzdm(major.getId());
+            ssyzyLqVoF.setZzmc(major.getName());
             int yzy985211Q = 0, yzySylQ = 0, yzyBxYjQ = 0, yzyBxWjQ = 0, yzyOtherQ = 0,
-                    tj985211Q = 0, tjSylQ = 0, tjBxYjQ = 0, tjBxWjQ = 0, tjOtherQ = 0;
+                    tj985211Q = 0, tjSylQ = 0, tjBxYjQ = 0, tjBxWjQ = 0, tjOtherQ = 0,
+                    boyQ = 0, totalQ = 0;
             int yzy985211F = 0, yzySylF = 0, yzyBxYjF = 0, yzyBxWjF = 0, yzyOtherF = 0,
-                    tj985211F = 0, tjSylF = 0, tjBxYjF = 0, tjBxWjF = 0, tjOtherF = 0;
+                    tj985211F = 0, tjSylF = 0, tjBxYjF = 0, tjBxWjF = 0, tjOtherF = 0,
+                    boyF = 0, totalF = 0;
             for (Lq lq : lqs) {
-                Bm bm = bmMapper.findByBmhAndBkdwmcAndBkzydmAndBkxxfs(lq.getBmh(),
-                        "西南石油大学", lq.getZydm(), lq.getXxfsdm());
-                //满足一志愿条件
-                if (bm != null) {
-
+                if (lq.getZydm().equals(major.getId())) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    if (bm != null) {
+                        //全日制
+                        if (bm.getBkxxfs() == 1) {
+                            totalQ++;
+                            if (lq.getXbdm() == 1) {
+                                boyQ++;
+                            }
+                            //满足一志愿条件
+                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                                Integer[] values = judgeUniversity(yzy985211Q, yzySylQ, yzyBxYjQ, yzyBxWjQ, yzyOtherQ, lq);
+                                yzy985211Q = values[0];
+                                yzySylQ = values[1];
+                                yzyBxYjQ = values[2];
+                                yzyBxWjQ = values[3];
+                                yzyOtherQ = values[4];
+                            } else {
+                                Integer[] values = judgeUniversity(tj985211Q, tjSylQ, tjBxYjQ, tjBxWjQ, tjOtherQ, lq);
+                                tj985211Q = values[0];
+                                tjSylQ = values[1];
+                                tjBxYjQ = values[2];
+                                tjBxWjQ = values[3];
+                                tjOtherQ = values[4];
+                            }
+                        } else {
+                            totalF++;
+                            if (lq.getXbdm() == 1) {
+                                boyF++;
+                            }
+                            //满足一志愿条件
+                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) && bm.getBkxxfs() == lq.getXxfsdm()) {
+                                Integer[] values = judgeUniversity(yzy985211F, yzySylF, yzyBxYjF, yzyBxWjF, yzyOtherF, lq);
+                                yzy985211F = values[0];
+                                yzySylF = values[1];
+                                yzyBxYjF = values[2];
+                                yzyBxWjF = values[3];
+                                yzyOtherF = values[4];
+                            } else {
+                                Integer[] values = judgeUniversity(tj985211F, tjSylF, tjBxYjF, tjBxWjF, tjOtherF, lq);
+                                tj985211F = values[0];
+                                tjSylF = values[1];
+                                tjBxYjF = values[2];
+                                tjBxWjF = values[3];
+                                tjOtherF = values[4];
+                            }
+                        }
+                    } else {
+                        if (lq.getXxfsdm() == 1) {
+                            totalQ++;
+                            if (lq.getXbdm() == 1) {
+                                boyQ++;
+                            }
+                            Integer[] values = judgeUniversity(tj985211Q, tjSylQ, tjBxYjQ, tjBxWjQ, tjOtherQ, lq);
+                            tj985211Q = values[0];
+                            tjSylQ = values[1];
+                            tjBxYjQ = values[2];
+                            tjBxWjQ = values[3];
+                            tjOtherQ = values[4];
+                        } else {
+                            totalF++;
+                            if (lq.getXbdm() == 1) {
+                                boyF++;
+                            }
+                            Integer[] values = judgeUniversity(tj985211F, tjSylF, tjBxYjF, tjBxWjF, tjOtherF, lq);
+                            tj985211F = values[0];
+                            tjSylF = values[1];
+                            tjBxYjF = values[2];
+                            tjBxWjF = values[3];
+                            tjOtherF = values[4];
+                        }
+                    }
                 }
             }
+            //全日制
+            ssyzyLqVoQ.setYzy985211(yzy985211Q);
+            ssyzyLqVoQ.setYzySyl(yzySylQ);
+            ssyzyLqVoQ.setYzyBxYj(yzyBxYjQ);
+            ssyzyLqVoQ.setYzyBxWj(yzyBxWjQ);
+            ssyzyLqVoQ.setYzyOther(yzyOtherQ);
+            ssyzyLqVoQ.setTj985211(tj985211Q);
+            ssyzyLqVoQ.setTjSyl(tjSylQ);
+            ssyzyLqVoQ.setTjBxYj(tjBxYjQ);
+            ssyzyLqVoQ.setTjBxWj(tjBxWjQ);
+            ssyzyLqVoQ.setTjOther(tjOtherQ);
+            ssyzyLqVoQ.setBoy(boyQ);
+            ssyzyLqVoQ.setTotal(totalQ);
+            ssYzyLqVos.add(ssyzyLqVoQ);
+            //非全日制
+            ssyzyLqVoF.setYzy985211(yzy985211F);
+            ssyzyLqVoF.setYzySyl(yzySylF);
+            ssyzyLqVoF.setYzyBxYj(yzyBxYjF);
+            ssyzyLqVoF.setYzyBxWj(yzyBxWjF);
+            ssyzyLqVoF.setYzyOther(yzyOtherF);
+            ssyzyLqVoF.setTj985211(tj985211F);
+            ssyzyLqVoF.setTjSyl(tjSylF);
+            ssyzyLqVoF.setTjBxYj(tjBxYjF);
+            ssyzyLqVoF.setTjBxWj(tjBxWjF);
+            ssyzyLqVoF.setTjOther(tjOtherF);
+            ssyzyLqVoF.setBoy(boyF);
+            ssyzyLqVoF.setTotal(totalF);
+            ssYzyLqVos.add(ssyzyLqVoF);
         }
-        return ResultVoUtil.success();
+        //保存计算数据
+        for (SsYzyLqVo ssYzyLqVo : ssYzyLqVos) {
+            SsYzyLq ssYzyLq = new SsYzyLq();
+            ssYzyLq.setId(RandomUtil.getRandomInteger(10));
+            ssYzyLq.setTime(time);
+            BeanUtils.copyProperties(ssYzyLqVo, ssYzyLq);
+            ssyzyLqMapper.save(ssYzyLq);
+        }
+        return ResultVoUtil.success(ssYzyLqVos);
+    }
+
+    @Override
+    public ResultVo ssRk(String time) {
+
+        return null;
     }
 
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {
@@ -502,7 +648,7 @@ public class DataServiceImpl implements DataService {
                 hashMap.put(lq.getBkzydm(), value);
                 girl++;
             }
-            int maxValue = hashMap.get(majors.get(0).getId());
+            /*int maxValue = hashMap.get(majors.get(0).getId());
             int minValue = hashMap.get(majors.get(0).getId());
             maxGirlMajor = majors.get(0).getName();
             minGirlMajor = majors.get(0).getName();
@@ -515,7 +661,7 @@ public class DataServiceImpl implements DataService {
                     minValue = hashMap.get(major.getId());
                     minGirlMajor = major.getName();
                 }
-            }
+            }*/
             //录取男生数量
             if (lq.getXbdm() == 1) {
                 boy++;
@@ -583,7 +729,7 @@ public class DataServiceImpl implements DataService {
                 }
             }
         }
-        int nowYear = new Date().getYear() + 1900;
+        int nowYear = Calendar.getInstance().get(Calendar.YEAR);
         try {
             maxAge = nowYear - Integer.parseInt((maxAge + "").substring(0, 4));
             minAge = nowYear - Integer.parseInt((minAge + "").substring(0, 4));
@@ -594,6 +740,20 @@ public class DataServiceImpl implements DataService {
         int maxmaxByUniversityValue = 0;
         //毕业人数做多的学校
         String maxByUniversity = null;
+        int maxValue = hashMap.get(majors.get(0).getId());
+        int minValue = hashMap.get(majors.get(0).getId());
+        maxGirlMajor = majors.get(0).getName();
+        minGirlMajor = majors.get(0).getName();
+        for (Major major : majors) {
+            if (hashMap.get(major.getId()) > maxValue) {
+                maxValue = hashMap.get(major.getId());
+                maxGirlMajor = major.getName();
+            }
+            if (hashMap.get(major.getId()) < minValue) {
+                minValue = hashMap.get(major.getId());
+                minGirlMajor = major.getName();
+            }
+        }
         for (String key : hashMapByxx.keySet()) {
             if (hashMapByxx.get(key) > maxmaxByUniversityValue) {
                 maxmaxByUniversityValue = hashMapByxx.get(key);
@@ -636,5 +796,39 @@ public class DataServiceImpl implements DataService {
             basicDateAnalysisVo.setMinBlYzyMajor("无");
         }
         return basicDateAnalysisVo;
+    }
+
+
+    private Integer[] judgeUniversity(Integer yzy985211, Integer yzySyl, Integer yzyBxYj, Integer yzyBxWj, Integer yzyOther, Lq lq) {
+        Integer[] values = new Integer[5];
+        try {
+            University university = excelUtil.getUniversity(lq.getBydwmc());
+            if (university.getB985() != 0 || university.getB211() != 0) {
+                yzy985211++;
+            }
+            if (university.getSyl() != 0) {
+                yzySyl++;
+            }
+            if (university.getName().equals("西南石油大学")) {
+                if (lq.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
+                    yzyBxYj++;
+                } else {
+                    yzyBxWj++;
+                }
+            }
+            if (university.getB985() == 0 && university.getB211() == 0 &&
+                    university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                yzyOther++;
+            }
+        } catch (EntityNotFoundException e) {
+            yzyOther++;
+            //e.printStackTrace();
+        }
+        values[0] = yzy985211;
+        values[1] = yzySyl;
+        values[2] = yzyBxYj;
+        values[3] = yzyBxWj;
+        values[4] = yzyOther;
+        return values;
     }
 }

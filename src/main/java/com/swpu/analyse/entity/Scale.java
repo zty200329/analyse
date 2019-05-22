@@ -70,5 +70,5 @@ public class Scale {
      * 2-(我校招生规模)
      * 3-(我校招生人数)
      **/
-    private String type;
+    private Integer type;
 }

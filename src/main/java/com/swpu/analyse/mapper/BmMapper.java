@@ -15,7 +15,9 @@ public interface BmMapper extends JpaRepository<Bm, String> {
     void deleteAllByTime(String time);
 
     Bm findByBmhAndBkdwmcAndBkzydmAndBkxxfs(String bmh, String bkdwmc,
-                                             String bkzydm, Integer xxfs);
+                                            String bkzydm, Integer xxfs);
+
+    Bm findByBmh(String bmh);
 
     List<Bm> findByTime(String time);
 

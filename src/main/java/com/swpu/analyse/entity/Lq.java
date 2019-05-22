@@ -87,6 +87,10 @@ public class Lq {
      **/
     private String bydwmc;
     /**
+     * 毕业年月
+     **/
+    private String byny;
+    /**
      * 毕业专业代码
      **/
     private String byzydm;

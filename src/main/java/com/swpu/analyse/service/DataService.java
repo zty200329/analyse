@@ -48,7 +48,7 @@ public interface DataService {
      * @author cyg
      * @date 2019/5/17 下午12:08
      */
-    ResultVo selectGmLq(ScaleDtoInsert scaleDtoInsert);
+    ResultVo selectGmLq(Integer type);
 
     /**
      * 功能描述: <br>
@@ -104,4 +104,15 @@ public interface DataService {
      * @date 2019/5/20 下午12:14
      */
     ResultVo ssYzyLq(String time);
+
+    /**
+     * 功能描述: <br>
+     * 〈上海软科排名〉
+     *
+     * @param
+     * @return
+     * @author cyg
+     * @date 2019/5/20 下午12:14
+     */
+    ResultVo ssRk(String time);
 }
