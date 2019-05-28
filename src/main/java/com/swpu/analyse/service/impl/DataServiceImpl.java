@@ -130,6 +130,12 @@ public class DataServiceImpl implements DataService {
     }
 
     @Override
+    public ResultVo deleteGmLq(String id) {
+        scaleMapper.deleteById(id);
+        return ResultVoUtil.success("删除成功");
+    }
+
+    @Override
     public ResultVo updateGmLq(ScaleDtoUpadte scaleDtoUpadte) {
         Optional<Scale> scale = scaleMapper.findById(scaleDtoUpadte.getId());
         BeanUtils.copyProperties(scaleDtoUpadte, scale.get());

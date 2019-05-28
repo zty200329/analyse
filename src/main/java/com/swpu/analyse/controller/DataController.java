@@ -58,6 +58,12 @@ public class DataController {
         return dataService.selectGmLq(type);
     }
 
+    @PostMapping("/deleteGmLq")
+    @ApiOperation(value = "删除招生规模/招生情况 ")
+    public ResultVo deleteGmLq(String id) {
+        return dataService.deleteGmLq(id);
+    }
+
     @PostMapping("/updateGmLq")
     @ApiOperation(value = "修改招生规模/招生情况")
     public ResultVo updateGmLq(ScaleDtoUpadte scaleDtoUpadte) {

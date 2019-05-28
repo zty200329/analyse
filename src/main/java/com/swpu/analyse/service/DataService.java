@@ -52,6 +52,17 @@ public interface DataService {
 
     /**
      * 功能描述: <br>
+     * 〈删除招生规模/招生情况〉
+     *
+     * @param
+     * @return
+     * @author cyg
+     * @date 2019/5/17 下午12:09
+     */
+    ResultVo deleteGmLq(String id);
+
+    /**
+     * 功能描述: <br>
      * 〈修改招生规模/招生情况〉
      *
      * @param
