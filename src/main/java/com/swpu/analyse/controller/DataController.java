@@ -121,4 +121,11 @@ public class DataController {
         return dataService.tjBk(time);
     }
 
+    @PostMapping("/tjBy")
+    @ApiOperation(value = "表九-(调剂生毕业学校)")
+    public ResultVo tjBy(String time) {
+
+        return dataService.tjBy(time);
+    }
+
 }

@@ -780,6 +780,63 @@ public class DataServiceImpl implements DataService {
         return ResultVoUtil.success(tjBkVos);
     }
 
+    @Override
+    public ResultVo tjBy(String time) {
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        List<TjByVo> tjByVos = new ArrayList<>();
+        for (Lq lq : lqs) {
+            Bm bm = bmMapper.findByBmh(lq.getBmh());
+            //满足调剂条件
+            if (bm == null || !bm.getBkdwdm().equals("10615") || !bm.getBkzydm().equals(lq.getZydm()) ||
+                    bm.getBkxxfs() != lq.getXxfsdm()) {
+                TjByVo tjByVo = new TjByVo();
+                if (lq.getXxfsdm() == 1) {
+                    tjByVo.setXxfsdm("全日制");
+                } else {
+                    tjByVo.setXxfsdm("非全日制");
+                }
+                BeanUtils.copyProperties(lq, tjByVo);
+                try {
+                    University university = excelUtil.getUniversity(lq.getBydwmc());
+                    if (university.getB985() != 0 || university.getB211() != 0) {
+                        tjByVo.setBkdw985211("1");
+                    } else {
+                        tjByVo.setBkdw985211("");
+                    }
+                    if (university.getSyl() != 0) {
+                        tjByVo.setBkdwsyl("1");
+                    } else {
+                        tjByVo.setBkdwsyl("");
+                    }
+                    if (university.getName().equals("西南石油大学")) {
+                        tjByVo.setBkdwbx("1");
+                    } else {
+                        tjByVo.setBkdwbx("");
+                    }
+                    if (university.getB985() == 0 && university.getB211() == 0 &&
+                            university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                        tjByVo.setBkdwother("1");
+                    } else {
+                        tjByVo.setBkdwother("");
+                    }
+                    tjByVo.setRkpm(university.getRkpm());
+                } catch (EntityNotFoundException e) {
+                    tjByVo.setBkdw985211("");
+                    tjByVo.setBkdwsyl("");
+                    tjByVo.setBkdwbx("");
+                    tjByVo.setBkdwother("1");
+                    tjByVo.setRkpm(0);
+                    //e.printStackTrace();
+                }
+                tjByVos.add(tjByVo);
+            }
+        }
+        return ResultVoUtil.success(tjByVos);
+    }
+
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {
         List<Major> majors = majorMapper.findAll();
         HashMap<String, Integer> hashMap = new HashMap<>();
