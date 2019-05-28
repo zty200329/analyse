@@ -14,6 +14,8 @@ public class ScaleDtoUpadte {
 
     @ApiParam("id")
     private String id;
+    @ApiParam("年份")
+    private String time;
     @ApiParam("博士小计")
     private Integer totalBs;
     @ApiParam("硕士小计")

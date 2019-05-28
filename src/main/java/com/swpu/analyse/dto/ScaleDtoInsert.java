@@ -14,6 +14,8 @@ import javax.persistence.Entity;
 @Data
 public class ScaleDtoInsert {
 
+    @ApiParam("年份")
+    private String time;
     @ApiParam("博士小计")
     private Integer totalBs;
     @ApiParam("硕士小计")
@@ -35,5 +37,5 @@ public class ScaleDtoInsert {
     @ApiParam("非全日制专业学位硕士")
     private Integer zyxwFqrzSs;
     @ApiParam("数据类型 1-(全国招生规模),2-(我校招生规模),3-(我校招生人数)")
-    private String type;
+    private Integer type;
 }

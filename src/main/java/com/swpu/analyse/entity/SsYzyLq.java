@@ -6,6 +6,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 /**
+ * 记录一志愿录取分析结果
+ *
  * @author cyg
  * @date 2019/5/20 下午11:00
  **/

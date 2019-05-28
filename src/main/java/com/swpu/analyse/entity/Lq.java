@@ -110,7 +110,10 @@ public class Lq {
      * 业务课1
      **/
     private String ywk1mc;
-
+    /**
+     * 业务课2代码
+     **/
+    private String ywk2dm;
     /**
      * 业务课2
      **/

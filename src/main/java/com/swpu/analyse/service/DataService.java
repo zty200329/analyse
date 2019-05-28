@@ -114,5 +114,29 @@ public interface DataService {
      * @author cyg
      * @date 2019/5/20 下午12:14
      */
-    ResultVo ssRk(String time);
+    ResultVo shRk(String time);
+
+    /**
+     * 功能描述: <br>
+     * 〈自命题成绩分析〉
+     *
+     * @param time           年份(2019)
+     * @param excellentScore 优秀分数
+     * @param passScore      及格分数
+     * @return
+     * @author cyg
+     * @date 2019/5/26 下午11:03
+     */
+    ResultVo ssZmt(String time, Integer excellentScore, Integer passScore);
+
+    /**
+     * 功能描述: <br>
+     * 〈统考题成绩分析〉
+     *
+     * @param time 年份(2019)
+     * @return
+     * @author cyg
+     * @date 2019/5/27 下午4:01
+     */
+    ResultVo ssTk(String time);
 }

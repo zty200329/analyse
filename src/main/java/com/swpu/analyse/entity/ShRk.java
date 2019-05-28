@@ -6,28 +6,29 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 /**
- * 记录一志愿报考分析结果
+ * 记录软科排名分析结果
  *
  * @author cyg
  * @date 2019/5/20 下午12:18
  **/
 @Entity
 @Data
-public class SsYzyBk {
+public class ShRk {
+
     @Id
     private String id;
-    /**
-     * 学院代码
-     **/
-    private String yxsdm;
     /**
      * 时间
      **/
     private String time;
     /**
-     * 学院名称
+     * 学院代码
      **/
-    private String yxs;
+    private String yxsdm;
+    /**
+     * 学院代码
+     **/
+    private String yxsmc;
     /**
      * 专业代码
      **/
@@ -41,33 +42,45 @@ public class SsYzyBk {
      **/
     private String bkxxfs;
     /**
-     * 毕业高校985211
+     * 一志愿A
      **/
-    private Integer by985211;
+    private Integer yzyA;
     /**
-     * 毕业高校双一流
+     * 一志愿B
      **/
-    private Integer bySyl;
+    private Integer yzyB;
     /**
-     * 毕业本校应届
+     * 一志愿C
      **/
-    private Integer bxYj;
+    private Integer yzyC;
     /**
-     * 毕业本校往届
+     * 一志愿D
      **/
-    private Integer bxWj;
+    private Integer yzyD;
     /**
-     * 其他学校
+     * 一志愿E
      **/
-    private Integer other;
+    private Integer yzyE;
     /**
-     * 接受推免生
+     * 调剂A
      **/
-    private Integer tms;
+    private Integer tjA;
     /**
-     * 男生
+     * 调剂B
      **/
-    private Integer boy;
+    private Integer tjB;
+    /**
+     * 调剂C
+     **/
+    private Integer tjC;
+    /**
+     * 调剂D
+     **/
+    private Integer tjD;
+    /**
+     * 调剂E
+     **/
+    private Integer tjE;
     /**
      * 总人数
      **/

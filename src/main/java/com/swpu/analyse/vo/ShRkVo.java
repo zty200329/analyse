@@ -7,7 +7,7 @@ import lombok.Data;
  * @date 2019/5/20 下午12:18
  **/
 @Data
-public class SsRkVo {
+public class ShRkVo {
 
     /**
      * 学院代码
@@ -52,23 +52,23 @@ public class SsRkVo {
     /**
      * 调剂A
      **/
-    private Integer yzyA;
+    private Integer tjA;
     /**
      * 调剂B
      **/
-    private Integer yzyB;
+    private Integer tjB;
     /**
      * 调剂C
      **/
-    private Integer yzyC;
+    private Integer tjC;
     /**
      * 调剂D
      **/
-    private Integer yzyD;
+    private Integer tjD;
     /**
      * 调剂E
      **/
-    private Integer yzyE;
+    private Integer tjE;
     /**
      * 总人数
      **/

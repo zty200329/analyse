@@ -7,6 +7,7 @@ import com.swpu.analyse.service.UserService;
 import com.swpu.analyse.vo.ResultVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -90,6 +91,27 @@ public class DataController {
     public ResultVo ssYzyLq(String time) {
 
         return dataService.ssYzyLq(time);
+    }
+
+    @PostMapping("/shRk")
+    @ApiOperation(value = "表五-(上海软科排名)")
+    public ResultVo shRk(String time) {
+
+        return dataService.shRk(time);
+    }
+
+    @PostMapping("/ssZmt")
+    @ApiOperation(value = "表六-(自命题成绩分析)")
+    public ResultVo ssZmt(String time, Integer excellentScore, Integer passScore) {
+
+        return dataService.ssZmt(time, excellentScore, passScore);
+    }
+
+    @PostMapping("/ssTk")
+    @ApiOperation(value = "表七-(统考题成绩分析)")
+    public ResultVo ssTk(String time) {
+
+        return dataService.ssTk(time);
     }
 
 }

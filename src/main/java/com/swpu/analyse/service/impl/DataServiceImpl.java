@@ -10,15 +10,10 @@ import com.swpu.analyse.service.DataService;
 import com.swpu.analyse.util.ExcelUtil;
 import com.swpu.analyse.util.RandomUtil;
 import com.swpu.analyse.util.ResultVoUtil;
-import com.swpu.analyse.vo.BasicDateAnalysisVo;
-import com.swpu.analyse.vo.ResultVo;
-import com.swpu.analyse.vo.SsYzyBkVo;
-import com.swpu.analyse.vo.SsYzyLqVo;
+import com.swpu.analyse.vo.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,12 +52,17 @@ public class DataServiceImpl implements DataService {
     private SsyzyBkMapper ssyzyBkMapper;
     @Autowired
     private SsyzyLqMapper ssyzyLqMapper;
+    @Autowired
+    private ShRkMapper shRkMapper;
+    @Autowired
+    private SsTkMapper ssTkMapper;
 
     @Override
     public ResultVo upload(MultipartFile file, String fileName, Integer type) throws IOException {
         basicMapper.deleteAll();
         ssyzyBkMapper.deleteAll();
         ssyzyLqMapper.deleteAll();
+        ssTkMapper.deleteAll();
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
         }
@@ -99,7 +99,6 @@ public class DataServiceImpl implements DataService {
         String id = RandomUtil.getRandomInteger(8);
         Scale scale = new Scale();
         scale.setId(id);
-        scale.setTime((Calendar.getInstance().get(Calendar.YEAR)) + "");
         scale.setTotalBs(scaleDtoInsert.getTotalBs());
         BeanUtils.copyProperties(scaleDtoInsert, scale);
         scaleMapper.save(scale);
@@ -131,7 +130,6 @@ public class DataServiceImpl implements DataService {
         scaleMapper.save(scale.get());
         return ResultVoUtil.success("修改成功");
     }
-
 
     @Override
     public ResultVo basicDateAnalysis(String time) {
@@ -326,21 +324,19 @@ public class DataServiceImpl implements DataService {
         orders.add(orderZzmc);
         Sort sort1 = Sort.by(orders);
         List<SsYzyLq> ssYzyLqs = ssyzyLqMapper.findAllByTime(time, sort1);
-      /*
-      //先查数据库,没有再重新计算
-      if (ssYzyLqs.size() != 0) {
+        //先查数据库,没有再重新计算
+        if (ssYzyLqs.size() != 0) {
             for (SsYzyLq ssYzyLq : ssYzyLqs) {
                 SsYzyLqVo ssYzyLqVo = new SsYzyLqVo();
                 BeanUtils.copyProperties(ssYzyLq, ssYzyLqVo);
                 ssYzyLqVos.add(ssYzyLqVo);
             }
             return ResultVoUtil.success(ssYzyLqVos);
-        }*/
-
+        }
         Sort.Order order = Sort.Order.asc("departmentId");
         Sort sort2 = Sort.by(order);
         List<Major> majors = majorMapper.findAll(sort2);
-        List<Lq> lqs = lqMapper.findAll();
+        List<Lq> lqs = lqMapper.findByTime(time);
         if (lqs.size() == 0) {
             return ResultVoUtil.error("没有数据");
         }
@@ -481,9 +477,254 @@ public class DataServiceImpl implements DataService {
     }
 
     @Override
-    public ResultVo ssRk(String time) {
+    public ResultVo shRk(String time) {
+        List<ShRkVo> shRkVos = new ArrayList<>();
+        //查询结果排序规则
+        Sort.Order orderYxsdm = Sort.Order.asc("yxsdm");
+        Sort.Order orderZzmc = Sort.Order.asc("zzmc");
+        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        orders.add(orderYxsdm);
+        orders.add(orderZzmc);
+        Sort sort1 = Sort.by(orders);
+        //先查数据库,没有再重新计算
+        List<ShRk> shRks = shRkMapper.findByTime(time, sort1);
+        if (shRks.size() != 0) {
+            for (ShRk shRk : shRks) {
+                ShRkVo shRkVo = new ShRkVo();
+                BeanUtils.copyProperties(shRk, shRkVo);
+                shRkVos.add(shRkVo);
+            }
+            return ResultVoUtil.success(shRkVos);
+        }
+        //按照院系id排序查询出所有专业
+        Sort.Order order = Sort.Order.asc("departmentId");
+        Sort sort2 = Sort.by(order);
+        List<Major> majors = majorMapper.findAll(sort2);
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        for (Major major : majors) {
+            ShRkVo shRkVoQ = new ShRkVo();
+            ShRkVo shRkVoF = new ShRkVo();
+            Department department = departmentMapper.getOne(major.getDepartmentId());
+            shRkVoQ.setYxsdm(department.getId());
+            shRkVoQ.setYxsmc(department.getName());
+            shRkVoQ.setBkxxfs("全日制");
+            shRkVoQ.setZzdm(major.getId());
+            shRkVoQ.setZzmc(major.getName());
+            shRkVoF.setYxsdm(department.getId());
+            shRkVoF.setYxsmc(department.getName());
+            shRkVoF.setBkxxfs("非全日制");
+            shRkVoF.setZzdm(major.getId());
+            shRkVoF.setZzmc(major.getName());
+            int yzyAQ = 0, yzyBQ = 0, yzyCQ = 0, yzyDQ = 0, yzyEQ = 0,
+                    tjAQ = 0, tjBQ = 0, tjCQ = 0, tjDQ = 0, tjEQ = 0,
+                    totalQ = 0;
+            int yzyAF = 0, yzyBF = 0, yzyCF = 0, yzyDF = 0, yzyEF = 0,
+                    tjAF = 0, tjBF = 0, tjCF = 0, tjDF = 0, tjEF = 0,
+                    totalF = 0;
+            for (Lq lq : lqs) {
+                if (lq.getZydm().equals(major.getId())) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    if (bm != null) {
+                        //全日制
+                        if (bm.getBkxxfs() == 1) {
+                            totalQ++;
+                            //满足一志愿条件
+                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                                Integer[] values = shRkUniversity(yzyAQ, yzyBQ, yzyCQ, yzyDQ, yzyEQ, lq);
+                                yzyAQ = values[0];
+                                yzyBQ = values[1];
+                                yzyCQ = values[2];
+                                yzyDQ = values[3];
+                                yzyEQ = values[4];
+                            } else {
+                                Integer[] values = shRkUniversity(tjAQ, tjBQ, tjCQ, tjDQ, tjEQ, lq);
+                                tjAQ = values[0];
+                                tjBQ = values[1];
+                                tjCQ = values[2];
+                                tjDQ = values[3];
+                                tjEQ = values[4];
+                            }
+                        } else {
+                            totalF++;
+                            //满足一志愿条件
+                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                                Integer[] values = shRkUniversity(yzyAF, yzyBF, yzyCF, yzyDF, yzyEF, lq);
+                                yzyAF = values[0];
+                                yzyBF = values[1];
+                                yzyCF = values[2];
+                                yzyDF = values[3];
+                                yzyEF = values[4];
+                            } else {
+                                Integer[] values = shRkUniversity(tjAF, tjBF, tjCF, tjDF, tjEF, lq);
+                                tjAF = values[0];
+                                tjBF = values[1];
+                                tjCF = values[2];
+                                tjDF = values[3];
+                                tjEF = values[4];
+                            }
+                        }
+                    } else {
+                        if (lq.getXxfsdm() == 1) {
+                            totalQ++;
+                            Integer[] values = shRkUniversity(tjAQ, tjBQ, tjCQ, tjDQ, tjEQ, lq);
+                            tjAQ = values[0];
+                            tjBQ = values[1];
+                            tjCQ = values[2];
+                            tjDQ = values[3];
+                            tjEQ = values[4];
+                        } else {
+                            totalF++;
+                            Integer[] values = shRkUniversity(tjAF, tjBF, tjCF, tjDF, tjEF, lq);
+                            tjAF = values[0];
+                            tjBF = values[1];
+                            tjCF = values[2];
+                            tjDF = values[3];
+                            tjEF = values[4];
+                        }
+                    }
+                }
+            }
+            //全日制
+            shRkVoQ.setYzyA(yzyAQ);
+            shRkVoQ.setYzyB(yzyBQ);
+            shRkVoQ.setYzyC(yzyCQ);
+            shRkVoQ.setYzyD(yzyDQ);
+            shRkVoQ.setYzyE(yzyEQ);
+            shRkVoQ.setTjA(tjAQ);
+            shRkVoQ.setTjB(tjBQ);
+            shRkVoQ.setTjC(tjCQ);
+            shRkVoQ.setTjD(tjDQ);
+            shRkVoQ.setTjE(tjEQ);
+            shRkVoQ.setTotal(totalQ);
+            //非全日制
+            shRkVoF.setYzyA(yzyAF);
+            shRkVoF.setYzyB(yzyBF);
+            shRkVoF.setYzyC(yzyCF);
+            shRkVoF.setYzyD(yzyDF);
+            shRkVoF.setYzyE(yzyEF);
+            shRkVoF.setTjA(tjAF);
+            shRkVoF.setTjB(tjBF);
+            shRkVoF.setTjC(tjCF);
+            shRkVoF.setTjD(tjDF);
+            shRkVoF.setTjE(tjEF);
+            shRkVoF.setTotal(totalF);
+            shRkVos.add(shRkVoF);
+        }
+        //保存计算数据
+        for (ShRkVo shRkVo : shRkVos) {
+            ShRk shRk = new ShRk();
+            shRk.setId(RandomUtil.getRandomInteger(10));
+            shRk.setTime(time);
+            BeanUtils.copyProperties(shRkVo, shRk);
+            shRkMapper.save(shRk);
+        }
+        return ResultVoUtil.success(shRkVos);
+    }
 
-        return null;
+    @Override
+    public ResultVo ssZmt(String time, Integer excellentScore, Integer passScore) {
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        //存储自命题的名称
+        HashSet<String> hashSet = new HashSet<>();
+        //记录平均分
+        TreeSet<Double> treeSet = new TreeSet<>();
+        for (Lq lq : lqs) {
+            if (!lq.getYwk2mc().equals("无")) {
+                hashSet.add(lq.getYwk2dm() + " " + lq.getYwk2mc());
+            }
+        }
+        List<SsZmtVo> ssZmtVos = new ArrayList<>();
+        for (String name : hashSet) {
+            SsZmtVo ssZmtVo = new SsZmtVo();
+            //有效成绩人数,优生人数,及格人数
+            int yxcjrs = 0, excellentNum = 0, passNum = 0;
+            double averageScore = 0d, maxScore = 0d, minScore = 0d,
+                    excellentRate = 0d, passRate = 0d, heightDifference = 0d;
+            double total = 0d;
+            maxScore = lqs.get(0).getYwk2();
+            minScore = lqs.get(0).getYwk2();
+            for (Lq lq : lqs) {
+                if (name.equals(lq.getYwk2dm() + " " + lq.getYwk2mc())) {
+                    yxcjrs++;
+                    total += lq.getYwk2();
+                    if (lq.getYwk2() > excellentScore) {
+                        excellentNum++;
+                    }
+                    if (lq.getYwk2() > passScore) {
+                        passNum++;
+                    }
+                    if (lq.getYwk2() >= maxScore) {
+                        maxScore = lq.getYwk2();
+                    }
+                    if (lq.getYwk2() <= minScore) {
+                        minScore = lq.getYwk2();
+                    }
+                }
+            }
+            averageScore = total / yxcjrs;
+            excellentRate = excellentNum / yxcjrs;
+            passRate = passNum / yxcjrs;
+            heightDifference = maxScore - minScore;
+            ssZmtVo.setName(name);
+            ssZmtVo.setYxcjrs(yxcjrs);
+            ssZmtVo.setAverageScore((double) Math.round(averageScore * 100) / 100);
+            treeSet.add((double) Math.round(averageScore * 100) / 100);
+            ssZmtVo.setMaxScore(maxScore);
+            ssZmtVo.setMinScore(minScore);
+            ssZmtVo.setExcellentNum(excellentNum);
+            ssZmtVo.setExcellentRate(excellentRate);
+            ssZmtVo.setPassNum(passNum);
+            ssZmtVo.setPassRate(passRate);
+            ssZmtVo.setHeightDifference(heightDifference);
+            ssZmtVos.add(ssZmtVo);
+        }
+        int i = 1;
+        List<SsZmtVo> ssZmtVosResult = new ArrayList<>();
+        while (treeSet.size() > 0) {
+            double score = treeSet.pollLast();
+            for (SsZmtVo ssZmtVo : ssZmtVos) {
+                if (ssZmtVo.getAverageScore() == score) {
+                    ssZmtVo.setPm(i);
+                    ssZmtVosResult.add(ssZmtVo);
+                    i++;
+                }
+            }
+        }
+        return ResultVoUtil.success(ssZmtVosResult);
+    }
+
+    @Override
+    public ResultVo ssTk(String time) {
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        Sort.Order order = Sort.Order.asc("name");
+        Sort sort = Sort.by(order);
+        List<SsTk> ssTks = ssTkMapper.findByTime(time, sort);
+        List<SsTkVo> ssTkVos = new ArrayList<>();
+        if (ssTks.size() == 5) {
+            for (SsTk ssTk : ssTks) {
+                SsTkVo ssTkVo = new SsTkVo();
+                BeanUtils.copyProperties(ssTk, ssTkVo);
+                ssTkVos.add(ssTkVo);
+            }
+            return ResultVoUtil.success(ssTkVos);
+        }
+        ssTkVos.add(getSsTkVo(lqs, "统考英语一", time));
+        ssTkVos.add(getSsTkVo(lqs, "统考英语二", time));
+        ssTkVos.add(getSsTkVo(lqs, "统考数学一", time));
+        ssTkVos.add(getSsTkVo(lqs, "统考数学二", time));
+        ssTkVos.add(getSsTkVo(lqs, "统考思想政治理论", time));
+        return ResultVoUtil.success(ssTkVos);
     }
 
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {
@@ -798,7 +1039,6 @@ public class DataServiceImpl implements DataService {
         return basicDateAnalysisVo;
     }
 
-
     private Integer[] judgeUniversity(Integer yzy985211, Integer yzySyl, Integer yzyBxYj, Integer yzyBxWj, Integer yzyOther, Lq lq) {
         Integer[] values = new Integer[5];
         try {
@@ -830,5 +1070,163 @@ public class DataServiceImpl implements DataService {
         values[3] = yzyBxWj;
         values[4] = yzyOther;
         return values;
+    }
+
+    private Integer[] shRkUniversity(Integer a, Integer b, Integer c, Integer d, Integer e, Lq lq) {
+        Integer[] values = new Integer[5];
+        try {
+            University university = excelUtil.getUniversity(lq.getBydwmc());
+            University swpu = excelUtil.getUniversity("西南石油大学");
+            Integer swpuPm = swpu.getRkpm();
+            if (university.getRkpm() == 0) {
+                e++;
+            } else if (university.getName().equals("西南石油大学")) {
+                a++;
+            } else if (university.getRkpm() < swpuPm && (swpuPm - university.getRkpm()) > 25) {
+                b++;
+            } else if (Math.abs(swpuPm - university.getRkpm()) <= 25) {
+                c++;
+            } else {
+                d++;
+            }
+        } catch (EntityNotFoundException e1) {
+            e++;
+            //e.printStackTrace();
+        }
+        values[0] = a;
+        values[1] = b;
+        values[2] = c;
+        values[3] = d;
+        values[4] = e;
+        return values;
+    }
+
+    private SsTkVo getSsTkVo(List<Lq> lqs, String name, String time) {
+        SsTkVo ssTkVo = new SsTkVo();
+        int numYzy = 0;
+        double pjYzy = 0d, fcYzy = 0d, totalScoreYzy = 0d;
+        double pjTj = 0d, fcTj = 0d, totalScoreTj = 0;
+        int numTj = 0;
+        if (name.equals("统考英语一") || name.equals("统考英语二")) {
+            ssTkVo.setName(name + "(100)");
+            for (Lq lq : lqs) {
+                if (lq.getWgymc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        numYzy++;
+                        totalScoreYzy += lq.getWgy();
+                    } else {
+                        numTj++;
+                        totalScoreTj += lq.getWgy();
+                    }
+                }
+            }
+            pjYzy = totalScoreYzy / numYzy;
+            pjTj = totalScoreTj / numTj;
+            //记录方差乘n
+            double countYzy = 0d;
+            //记录方差乘n
+            double countTj = 0d;
+            for (Lq lq : lqs) {
+                if (lq.getWgymc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        countYzy += Math.pow((lq.getWgy() - pjYzy), 2);
+                    } else {
+                        countTj += Math.pow((lq.getWgy() - pjTj), 2);
+                    }
+                }
+            }
+            fcYzy = countYzy / numYzy;
+            fcTj = countTj / numTj;
+        }
+        if (name.equals("统考数学一") || name.equals("统考数学二")) {
+            ssTkVo.setName(name + "(150)");
+            for (Lq lq : lqs) {
+                if (lq.getYwk1mc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        numYzy++;
+                        totalScoreYzy += lq.getYwk1();
+                    } else {
+                        numTj++;
+                        totalScoreTj += lq.getYwk1();
+                    }
+                }
+            }
+            pjYzy = totalScoreYzy / numYzy;
+            pjTj = totalScoreTj / numTj;
+            //记录方差乘n
+            double countYzy = 0d;
+            //记录方差乘n
+            double countTj = 0d;
+            for (Lq lq : lqs) {
+                if (lq.getYwk1mc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        countYzy += Math.pow((lq.getYwk1() - pjYzy), 2);
+                    } else {
+                        countTj += Math.pow((lq.getYwk1() - pjTj), 2);
+                    }
+                }
+            }
+            fcYzy = countYzy / numYzy;
+            fcTj = countTj / numTj;
+        }
+        if (name.equals("统考思想政治理论")) {
+            ssTkVo.setName(name + "(100)");
+            for (Lq lq : lqs) {
+                if (lq.getZzllmc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        numYzy++;
+                        totalScoreYzy += lq.getZzll();
+                    } else {
+                        numTj++;
+                        totalScoreTj += lq.getZzll();
+                    }
+                }
+            }
+            pjYzy = totalScoreYzy / numYzy;
+            pjTj = totalScoreTj / numTj;
+            //记录方差乘n
+            double countYzy = 0d;
+            //记录方差乘n
+            double countTj = 0d;
+            for (Lq lq : lqs) {
+                if (lq.getZzllmc().equals(name)) {
+                    Bm bm = bmMapper.findByBmh(lq.getBmh());
+                    //满足一志愿条件
+                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                        countYzy += Math.pow((lq.getZzll() - pjYzy), 2);
+                    } else {
+                        countTj += Math.pow((lq.getZzll() - pjTj), 2);
+                    }
+                }
+            }
+            fcYzy = countYzy / numYzy;
+            fcTj = countTj / numTj;
+        }
+        ssTkVo.setYzyPj((double) Math.round(pjYzy * 100) / 100);
+        ssTkVo.setYzyFc((double) Math.round(fcYzy * 100) / 100);
+        ssTkVo.setTjPj((double) Math.round(pjTj * 100) / 100);
+        ssTkVo.setTjFc((double) Math.round(fcTj * 100) / 100);
+        SsTk ssTk = new SsTk();
+        BeanUtils.copyProperties(ssTkVo, ssTk);
+        ssTk.setTime(time);
+        ssTk.setId(RandomUtil.getRandomInteger(8));
+        ssTkMapper.save(ssTk);
+        return ssTkVo;
     }
 }

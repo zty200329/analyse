@@ -217,7 +217,7 @@ public class ExcelUtil {
         Row rowFirst = sheet.getRow(0);
         String[] lqs = {"bmh", "xm", "yxsdm", "zydm", "zymc", "xxfsdm", "bkdwmc", "bkyxsdm", "bkyxsmc",
                 "bkzydm", "csrq", "mzdm", "xbdm", "hfdm", "zzmmdm", "kslymc", "bydwmc",
-                "byzydm", "byzymc","byny", "zzllmc", "wgymc", "ywk1mc", "ywk2mc", "zzll", "wgy",
+                "byzydm", "byzymc","byny", "zzllmc", "wgymc", "ywk1mc","ywk2dm", "ywk2mc", "zzll", "wgy",
                 "ywk1", "ywk2", "zf"};
         HashMap<String, Integer> hashMap = getMapping(lqs, rowFirst);
         int sum = 0;
@@ -254,6 +254,7 @@ public class ExcelUtil {
                 lq.setZzllmc(row.getCell(hashMap.get("zzllmc")).getStringCellValue());
                 lq.setWgymc(row.getCell(hashMap.get("wgymc")).getStringCellValue());
                 lq.setYwk1mc(row.getCell(hashMap.get("ywk1mc")).getStringCellValue());
+                lq.setYwk2dm(row.getCell(hashMap.get("ywk2dm")).getStringCellValue());
                 lq.setYwk2mc(row.getCell(hashMap.get("ywk2mc")).getStringCellValue());
                 lq.setZzll(row.getCell(hashMap.get("zzll")).getNumericCellValue());
                 lq.setWgy(row.getCell(hashMap.get("wgy")).getNumericCellValue());
