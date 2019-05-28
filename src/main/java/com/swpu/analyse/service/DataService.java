@@ -161,4 +161,15 @@ public interface DataService {
      * @date 2019/5/28 上午11:39
      */
     ResultVo tjBy(String time);
+
+    /**
+     * 功能描述: <br>
+     * 〈学生的毕业省份信息〉
+     *
+     * @param
+     * @return
+     * @author cyg
+     * @date 2019/5/28 下午9:08
+     */
+    ResultVo position(String time);
 }

@@ -56,6 +56,10 @@ public class DataServiceImpl implements DataService {
     private ShRkMapper shRkMapper;
     @Autowired
     private SsTkMapper ssTkMapper;
+    @Autowired
+    private ProvinceMapper provinceMapper;
+    @Autowired
+    private PositionMapper positionMapper;
 
     @Override
     public ResultVo upload(MultipartFile file, String fileName,
@@ -64,6 +68,7 @@ public class DataServiceImpl implements DataService {
         ssyzyBkMapper.deleteAllByTime(time);
         ssyzyLqMapper.deleteAllByTime(time);
         ssTkMapper.deleteAllByTime(time);
+        positionMapper.deleteAllByTime(time);
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
         }
@@ -837,6 +842,45 @@ public class DataServiceImpl implements DataService {
         return ResultVoUtil.success(tjByVos);
     }
 
+    @Override
+    public ResultVo position(String time) {
+        HashMap<String, Integer> hashMap = new HashMap<>();
+        List<Position> positions = positionMapper.findByTime(time);
+        if (positions.size() != 0) {
+            for (Position position : positions) {
+                hashMap.put(position.getName(), position.getNum());
+            }
+            return ResultVoUtil.success(hashMap);
+        }
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        List<Province> provinces = provinceMapper.findAll();
+        for (Province province : provinces) {
+            hashMap.put(province.getName(), 0);
+        }
+        for (Lq lq : lqs) {
+            try {
+                University university = excelUtil.getUniversity(lq.getBydwmc());
+                Province province = provinceMapper.getOne(university.getProvinceId());
+                int value = hashMap.get(province.getName()) + 1;
+                hashMap.put(province.getName(), value);
+            } catch (EntityNotFoundException e) {
+                //e.printStackTrace();
+            }
+        }
+        for (String s : hashMap.keySet()) {
+            Position position = new Position();
+            position.setId(RandomUtil.getRandomInteger(10));
+            position.setTime(time);
+            position.setName(s);
+            position.setNum(hashMap.get(s));
+            positionMapper.save(position);
+        }
+        return ResultVoUtil.success(hashMap);
+    }
+
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {
         List<Major> majors = majorMapper.findAll();
         HashMap<String, Integer> hashMap = new HashMap<>();
@@ -1339,4 +1383,6 @@ public class DataServiceImpl implements DataService {
         ssTkMapper.save(ssTk);
         return ssTkVo;
     }
+
+
 }

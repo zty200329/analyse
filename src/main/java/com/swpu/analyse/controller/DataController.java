@@ -128,4 +128,11 @@ public class DataController {
         return dataService.tjBy(time);
     }
 
+    @PostMapping("/position")
+    @ApiOperation(value = "前端加载地图-学生的毕业省份信息")
+    public ResultVo position(String time) {
+
+        return dataService.position(time);
+    }
+
 }
