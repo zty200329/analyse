@@ -40,9 +40,9 @@ public class DataController {
             "3-(专业推免生数量信息)" +
             "4-(报名库信息)" +
             "5-(录取库信息)")
-    public ResultVo upload(MultipartFile file, String fileName, Integer type) throws IOException {
+    public ResultVo upload(MultipartFile file, String fileName, Integer type, String time) throws IOException {
 
-        return dataService.upload(file, fileName, type);
+        return dataService.upload(file, fileName, type, time);
     }
 
     @PostMapping("/insertGmLq")
@@ -112,6 +112,13 @@ public class DataController {
     public ResultVo ssTk(String time) {
 
         return dataService.ssTk(time);
+    }
+
+    @PostMapping("/tjBk")
+    @ApiOperation(value = "表八-(调剂生报考学校)")
+    public ResultVo tjBk(String time) {
+
+        return dataService.tjBk(time);
     }
 
 }

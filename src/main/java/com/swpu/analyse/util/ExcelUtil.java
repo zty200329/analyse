@@ -160,12 +160,12 @@ public class ExcelUtil {
         }
     }
 
-    public void bm(InputStream inputStream, String fileName) throws IOException {
-        bmMapper.deleteAllByTime((new Date().getYear() + 1900) + "");
+    public void bm(InputStream inputStream, String fileName,String time) throws IOException {
+        bmMapper.deleteAllByTime(time);
         Workbook wb = getWorkbook(inputStream, fileName);
         Sheet sheet = wb.getSheetAt(0);
         Row rowFirst = sheet.getRow(0);
-        String[] bxs = {"bmh", "xm", "ksfsm", "csrq", "mzm", "xbm", "hfm", "zzmmm", "bydw","bydwm", "byzymc",
+        String[] bxs = {"bmh", "xm", "ksfsm", "csrq", "mzm", "xbm", "hfm", "zzmmm", "bydw", "bydwm", "byzymc",
                 "byny", "bkdwdm", "bkdwmc", "bkyxsm", "bkyxsmc", "bkzydm", "bkzymc", "bkxxfs",
                 "zzllmc", "wgymc", "ywk1mc", "ywk2mc"};
         HashMap<String, Integer> hashMap = getMapping(bxs, rowFirst);
@@ -176,7 +176,7 @@ public class ExcelUtil {
             }
             Bm bm = new Bm();
             try {
-                bm.setBmId((new Date().getYear() + 1900) + "-" + RandomUtil.getRandomInteger(8));
+                bm.setBmId(time + "-" + RandomUtil.getRandomInteger(8));
                 row.getCell(hashMap.get("bmh")).setCellType(HSSFCell.CELL_TYPE_STRING);
                 bm.setBmh(row.getCell(hashMap.get("bmh")).getStringCellValue());
                 bm.setXm(row.getCell(hashMap.get("xm")).getStringCellValue());
@@ -201,7 +201,7 @@ public class ExcelUtil {
                 bm.setWgymc(row.getCell(hashMap.get("wgymc")).getStringCellValue());
                 bm.setYwk1mc(row.getCell(hashMap.get("ywk1mc")).getStringCellValue());
                 bm.setYwk2mc(row.getCell(hashMap.get("ywk2mc")).getStringCellValue());
-                bm.setTime((new Date().getYear() + 1900) + "");
+                bm.setTime(time);
                 bmMapper.save(bm);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -210,18 +210,17 @@ public class ExcelUtil {
         }
     }
 
-    public void lq(InputStream inputStream, String fileName) throws IOException {
-        lqMapper.deleteAllByTime((new Date().getYear() + 1900) + "");
+    public void lq(InputStream inputStream, String fileName,String time) throws IOException {
+        lqMapper.deleteAllByTime(time);
         Workbook wb = getWorkbook(inputStream, fileName);
         Sheet sheet = wb.getSheetAt(0);
         Row rowFirst = sheet.getRow(0);
-        String[] lqs = {"bmh", "xm", "yxsdm", "zydm", "zymc", "xxfsdm", "bkdwmc", "bkyxsdm", "bkyxsmc",
+        String[] lqs = {"bmh", "ksbh", "xm", "yxsdm", "yxsmc", "zydm", "zymc", "xxfsdm", "bkdwmc", "bkyxsdm", "bkyxsmc",
                 "bkzydm", "csrq", "mzdm", "xbdm", "hfdm", "zzmmdm", "kslymc", "bydwmc",
-                "byzydm", "byzymc","byny", "zzllmc", "wgymc", "ywk1mc","ywk2dm", "ywk2mc", "zzll", "wgy",
+                "byzydm", "byzymc", "byny", "zzllmc", "wgymc", "ywk1mc", "ywk2dm", "ywk2mc", "zzll", "wgy",
                 "ywk1", "ywk2", "zf"};
         HashMap<String, Integer> hashMap = getMapping(lqs, rowFirst);
         int sum = 0;
-        List<Lq> lqs1 = new ArrayList<>();
         for (int r = 1; r <= sheet.getLastRowNum(); r++) {
             Row row = sheet.getRow(r);
             if (row == null) {
@@ -229,11 +228,14 @@ public class ExcelUtil {
             }
             Lq lq = new Lq();
             try {
-                lq.setLqId((new Date().getYear() + 1900) + "-" + RandomUtil.getRandomInteger(8));
+                lq.setLqId(time + "-" + RandomUtil.getRandomInteger(8));
                 row.getCell(hashMap.get("bmh")).setCellType(HSSFCell.CELL_TYPE_STRING);
                 lq.setBmh(row.getCell(hashMap.get("bmh")).getStringCellValue());
+                row.getCell(hashMap.get("ksbh")).setCellType(HSSFCell.CELL_TYPE_STRING);
+                lq.setKsbh(row.getCell(hashMap.get("ksbh")).getStringCellValue());
                 lq.setXm(row.getCell(hashMap.get("xm")).getStringCellValue());
                 lq.setYxsdm(row.getCell(hashMap.get("yxsdm")).getStringCellValue());
+                lq.setYxsmc(row.getCell(hashMap.get("yxsmc")).getStringCellValue());
                 lq.setZydm(row.getCell(hashMap.get("zydm")).getStringCellValue());
                 lq.setZymc(row.getCell(hashMap.get("zymc")).getStringCellValue());
                 lq.setXxfsdm(Integer.parseInt(row.getCell(hashMap.get("xxfsdm")).getStringCellValue()));
@@ -261,8 +263,7 @@ public class ExcelUtil {
                 lq.setYwk1(row.getCell(hashMap.get("ywk1")).getNumericCellValue());
                 lq.setYwk2(row.getCell(hashMap.get("ywk2")).getNumericCellValue());
                 lq.setZf(row.getCell(hashMap.get("zf")).getNumericCellValue());
-                lq.setTime((new Date().getYear() + 1900) + "");
-                lqs1.add(lq);
+                lq.setTime(time);
                 lqMapper.save(lq);
             } catch (Exception e) {
                 if (!row.getCell(hashMap.get("xxfsdm")).getStringCellValue().equals("录取学习方式")) {
@@ -272,7 +273,6 @@ public class ExcelUtil {
             }
             //System.out.println(lqs1.size());
         }
-        lqMapper.saveAll(lqs1);
     }
 
     private Workbook getWorkbook(InputStream inputStream, String fileName) throws IOException {

@@ -22,14 +22,22 @@ public class Lq {
      **/
     private String bmh;
     /**
+     * 考生编号
+     **/
+    private String ksbh;
+    /**
      * 时间
      **/
     private String time;
     private String xm;
     /**
-     * 录取学院
+     * 录取学院代码
      **/
     private String yxsdm;
+    /**
+     * 录取学院名称
+     **/
+    private String yxsmc;
     /**
      * 录取专业代码
      **/

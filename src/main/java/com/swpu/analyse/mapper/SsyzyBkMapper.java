@@ -15,5 +15,5 @@ public interface SsyzyBkMapper extends JpaRepository<SsYzyBk, String> {
 
     List<SsYzyBk> findAllByTime(String time, Sort sort);
 
-    void deleteByTime(String time);
+    void deleteAllByTime(String time);
 }

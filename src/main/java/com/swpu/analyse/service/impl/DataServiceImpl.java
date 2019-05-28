@@ -58,11 +58,12 @@ public class DataServiceImpl implements DataService {
     private SsTkMapper ssTkMapper;
 
     @Override
-    public ResultVo upload(MultipartFile file, String fileName, Integer type) throws IOException {
-        basicMapper.deleteAll();
-        ssyzyBkMapper.deleteAll();
-        ssyzyLqMapper.deleteAll();
-        ssTkMapper.deleteAll();
+    public ResultVo upload(MultipartFile file, String fileName,
+                           Integer type, String time) throws IOException {
+        basicMapper.deleteAllByTime(time);
+        ssyzyBkMapper.deleteAllByTime(time);
+        ssyzyLqMapper.deleteAllByTime(time);
+        ssTkMapper.deleteAllByTime(time);
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
         }
@@ -81,11 +82,11 @@ public class DataServiceImpl implements DataService {
                 break;
             //报名库信息
             case 4:
-                excelUtil.bm(file.getInputStream(), fileName);
+                excelUtil.bm(file.getInputStream(), fileName, time);
                 break;
             //录取库信息
             case 5:
-                excelUtil.lq(file.getInputStream(), fileName);
+                excelUtil.lq(file.getInputStream(), fileName, time);
                 break;
             default:
                 return ResultVoUtil.error("请选择正确的文件类型");
@@ -725,6 +726,58 @@ public class DataServiceImpl implements DataService {
         ssTkVos.add(getSsTkVo(lqs, "统考数学二", time));
         ssTkVos.add(getSsTkVo(lqs, "统考思想政治理论", time));
         return ResultVoUtil.success(ssTkVos);
+    }
+
+    @Override
+    public ResultVo tjBk(String time) {
+        List<Lq> lqs = lqMapper.findByTime(time);
+        if (lqs.size() == 0) {
+            return ResultVoUtil.error("没有数据");
+        }
+        List<TjBkVo> tjBkVos = new ArrayList<>();
+        for (Lq lq : lqs) {
+            Bm bm = bmMapper.findByBmh(lq.getBmh());
+            //满足调剂条件
+            if (bm == null || !bm.getBkdwdm().equals("10615") || !bm.getBkzydm().equals(lq.getZydm()) ||
+                    bm.getBkxxfs() != lq.getXxfsdm()) {
+                TjBkVo tjBkVo = new TjBkVo();
+                if (lq.getXxfsdm() == 1) {
+                    tjBkVo.setXxfsdm("全日制");
+                } else {
+                    tjBkVo.setXxfsdm("非全日制");
+                }
+                BeanUtils.copyProperties(lq, tjBkVo);
+                try {
+                    University university = excelUtil.getUniversity(lq.getBkdwmc());
+                    if (university.getB985() != 0 || university.getB211() != 0) {
+                        tjBkVo.setBkdw985211("1");
+                    } else {
+                        tjBkVo.setBkdw985211("");
+                    }
+                    if (university.getSyl() != 0) {
+                        tjBkVo.setBkdwsyl("1");
+                    } else {
+                        tjBkVo.setBkdwsyl("");
+                    }
+                    if (university.getName().equals("西南石油大学")) {
+                        tjBkVo.setBkdwbx("1");
+                    } else {
+                        tjBkVo.setBkdwbx("");
+                    }
+                    if (university.getB985() == 0 && university.getB211() == 0 &&
+                            university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                        tjBkVo.setBkdwother("1");
+                    } else {
+                        tjBkVo.setBkdwother("");
+                    }
+                    tjBkVo.setRkpm(university.getRkpm());
+                } catch (EntityNotFoundException e) {
+                    //e.printStackTrace();
+                }
+                tjBkVos.add(tjBkVo);
+            }
+        }
+        return ResultVoUtil.success(tjBkVos);
     }
 
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {

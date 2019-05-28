@@ -11,5 +11,5 @@ import java.util.List;
  * @date 2019/5/15 下午1:33
  **/
 public interface BasicMapper extends JpaRepository<BasicDateAnalysis, String> {
-    void deleteByTime(String time);
+    void deleteAllByTime(String time);
 }

@@ -12,6 +12,7 @@ import java.util.List;
  * @date 2019/5/15 下午1:50
  **/
 public interface SsTkMapper extends JpaRepository<SsTk, String> {
+    void deleteAllByTime(String time);
 
     List<SsTk> findByTime(String time, Sort sort);
 }

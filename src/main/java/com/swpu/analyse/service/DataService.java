@@ -26,7 +26,7 @@ public interface DataService {
      * @author cyg
      * @date 19-05-18 下午12:14
      */
-    ResultVo upload(MultipartFile file, String fileName, Integer type) throws IOException;
+    ResultVo upload(MultipartFile file, String fileName, Integer type, String time) throws IOException;
 
     /**
      * 功能描述: <br>
@@ -139,4 +139,15 @@ public interface DataService {
      * @date 2019/5/27 下午4:01
      */
     ResultVo ssTk(String time);
+
+    /**
+     * 功能描述: <br>
+     * 〈调剂生报考学校〉
+     *
+     * @param
+     * @return
+     * @author cyg
+     * @date 2019/5/28 上午11:39
+     */
+    ResultVo tjBk(String time);
 }
