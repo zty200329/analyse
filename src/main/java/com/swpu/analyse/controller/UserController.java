@@ -36,4 +36,11 @@ public class UserController {
         response.addHeader("Access-Control-Expose-Headers", "Origin, X-Requested-With, Content-Type, Accept,Authorization");
         return userService.login(username, password, response);
     }
+
+    @PostMapping("/update")
+    @ApiOperation(value = "修改密码")
+    public ResultVo update(String username, String password, String newPassword) {
+
+        return userService.update(username, password, newPassword);
+    }
 }

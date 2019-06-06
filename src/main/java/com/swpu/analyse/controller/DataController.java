@@ -108,9 +108,11 @@ public class DataController {
 
     @PostMapping("/ssZmt")
     @ApiOperation(value = "表六-(自命题成绩分析)")
-    public ResultVo ssZmt(String time, Integer excellentScore, Integer passScore) {
+    public ResultVo ssZmt(String time, Integer excellentScore100, Integer passScore100,
+                          Integer excellentScore150, Integer passScore150) {
 
-        return dataService.ssZmt(time, excellentScore, passScore);
+        return dataService.ssZmt(time, excellentScore100, passScore100,
+                excellentScore150, passScore150);
     }
 
     @PostMapping("/ssTk")

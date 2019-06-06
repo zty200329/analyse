@@ -23,5 +23,14 @@ public interface UserService {
      */
     ResultVo login(String username, String password, HttpServletResponse response);
 
-
+    /**
+     * 功能描述: <br>
+     * 〈修改密码〉
+     *
+     * @param passwordNew 新密码
+     * @return
+     * @author cyg
+     * @date 19-6-6 上午11:59
+     */
+    ResultVo update(String username, String password, String newPassword);
 }

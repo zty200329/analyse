@@ -131,14 +131,17 @@ public interface DataService {
      * 功能描述: <br>
      * 〈自命题成绩分析〉
      *
-     * @param time           年份(2019)
-     * @param excellentScore 优秀分数
-     * @param passScore      及格分数
+     * @param time              年份(2019)
+     * @param excellentScore100 优秀分数(满分100)
+     * @param passScore100      及格分数(满分100)
+     * @param excellentScore150 优秀分数(满分150)
+     * @param passScore150      及格分数(满分150)
      * @return
      * @author cyg
      * @date 2019/5/26 下午11:03
      */
-    ResultVo ssZmt(String time, Integer excellentScore, Integer passScore);
+    ResultVo ssZmt(String time, Integer excellentScore100, Integer passScore100,
+                   Integer excellentScore150, Integer passScore150);
 
     /**
      * 功能描述: <br>

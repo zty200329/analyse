@@ -60,6 +60,8 @@ public class DataServiceImpl implements DataService {
     private ProvinceMapper provinceMapper;
     @Autowired
     private PositionMapper positionMapper;
+    @Autowired
+    private SsZmtMapper ssZmtMapper;
 
     @Override
     public ResultVo upload(MultipartFile file, String fileName,
@@ -641,7 +643,22 @@ public class DataServiceImpl implements DataService {
     }
 
     @Override
-    public ResultVo ssZmt(String time, Integer excellentScore, Integer passScore) {
+    public ResultVo ssZmt(String time, Integer excellentScore100, Integer passScore100,
+                          Integer excellentScore150, Integer passScore150) {
+        List<SsZmtVo> ssZmtVos = new ArrayList<>();
+        //查询结果排序规则
+        Sort.Order order = Sort.Order.asc("pm");
+        Sort sort = Sort.by(order);
+        //先查数据库,没有再重新计算
+        List<SsZmt> ssZmts = ssZmtMapper.findAllByTime(time, sort);
+        if (ssZmts.size() != 0) {
+            for (SsZmt ssZmt : ssZmts) {
+                SsZmtVo zmtVo = new SsZmtVo();
+                BeanUtils.copyProperties(ssZmt, zmtVo);
+                ssZmtVos.add(zmtVo);
+            }
+            return ResultVoUtil.success(ssZmtVos);
+        }
         List<Lq> lqs = lqMapper.findByTime(time);
         if (lqs.size() == 0) {
             return ResultVoUtil.error("没有数据");
@@ -655,29 +672,47 @@ public class DataServiceImpl implements DataService {
                 hashSet.add(lq.getYwk2dm() + " " + lq.getYwk2mc());
             }
         }
-        List<SsZmtVo> ssZmtVos = new ArrayList<>();
         for (String name : hashSet) {
             SsZmtVo ssZmtVo = new SsZmtVo();
+            //记录当前科目满分 0-100,1-150
+            int flag = 0;
+            //业务课2代码以'1'或'2'开头的满分为100分
+            ssZmtVo.setMf(100d);
+            if (!name.startsWith("1") && !name.startsWith("2")) {
+                flag = 1;
+                ssZmtVo.setMf(150d);
+            }
             //有效成绩人数,优生人数,及格人数
             int yxcjrs = 0, excellentNum = 0, passNum = 0;
             double averageScore = 0d, maxScore = 0d, minScore = 0d,
                     excellentRate = 0d, passRate = 0d, heightDifference = 0d;
             double total = 0d;
-            maxScore = lqs.get(0).getYwk2();
-            minScore = lqs.get(0).getYwk2();
+            maxScore = 0;
+            minScore = 150;
             for (Lq lq : lqs) {
                 if (name.equals(lq.getYwk2dm() + " " + lq.getYwk2mc())) {
                     yxcjrs++;
                     total += lq.getYwk2();
-                    if (lq.getYwk2() > excellentScore) {
-                        excellentNum++;
+                    if (flag == 0) {
+                        if (lq.getYwk2() > excellentScore100) {
+                            excellentNum++;
+                        }
+                        if (lq.getYwk2() > passScore100) {
+                            passNum++;
+                        }
+                    } else if (flag == 1) {
+                        if (lq.getYwk2() > excellentScore150) {
+                            excellentNum++;
+                        }
+                        if (lq.getYwk2() > passScore150) {
+                            passNum++;
+                        }
                     }
-                    if (lq.getYwk2() > passScore) {
-                        passNum++;
-                    }
+                    //最高分
                     if (lq.getYwk2() >= maxScore) {
                         maxScore = lq.getYwk2();
                     }
+                    //最低分
                     if (lq.getYwk2() <= minScore) {
                         minScore = lq.getYwk2();
                     }
@@ -711,6 +746,14 @@ public class DataServiceImpl implements DataService {
                     i++;
                 }
             }
+        }
+        //保存计算数据
+        for (SsZmtVo ssZmtVo : ssZmtVosResult) {
+            SsZmt ssZmt = new SsZmt();
+            ssZmt.setId(RandomUtil.getRandomInteger(10));
+            ssZmt.setTime(time);
+            BeanUtils.copyProperties(ssZmtVo, ssZmt);
+            ssZmtMapper.save(ssZmt);
         }
         return ResultVoUtil.success(ssZmtVosResult);
     }

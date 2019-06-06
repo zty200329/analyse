@@ -40,7 +40,8 @@ jwt:
   expiration: 36000000
   tokenStart: "Bearer "
   tokenName: Authorization
-  Not_interception_path: "/data/*,/user/login,/swagger/*,/webjars/*,/v2/*,/configuration/*,/images/*,/favicon.ico"
+  #Not_interception_path: "/user/login,/swagger/*,/webjars/*,/v2/*,/configuration/*,/images/*,/favicon.ico"
+  Not_interception_path: "/data/*,/user/*,/swagger/*,/webjars/*,/v2/*,/configuration/*,/images/*,/favicon.ico"
 
 
 

@@ -13,7 +13,7 @@ public enum ResultEnum {
 
     /****/
     UNKNOWN_ERROR(-1, "未知错误"),
-    LOGIN_ERROR(2, "登录失败,用户密码错误"),
+    LOGIN_ERROR(2, "用户密码错误"),
     WITHOUT_THIS_USER(3, "没有此用户"),
     USER_REGISTRATION_FAILURE(4, "用户注册失败"),
     INSERT_ERROR(5, "插入失败"),

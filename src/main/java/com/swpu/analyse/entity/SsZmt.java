@@ -1,14 +1,24 @@
-package com.swpu.analyse.vo;
+package com.swpu.analyse.entity;
 
 import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 /**
  * @author cyg
  * @date 2019/5/26 下午11:17
  **/
+@Entity
 @Data
-public class SsZmtVo {
-
+public class SsZmt {
+    
+    @Id
+    private String id;
+    /**
+     * 时间
+     **/
+    private String time;
     /**
      * 科目
      **/
