@@ -13,5 +13,7 @@ import java.util.List;
  **/
 public interface ShRkMapper extends JpaRepository<ShRk, String> {
 
+    void deleteAllByTime(String time);
+
     List<ShRk> findByTime(String time, Sort sort);
 }

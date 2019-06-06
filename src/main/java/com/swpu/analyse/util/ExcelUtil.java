@@ -160,7 +160,7 @@ public class ExcelUtil {
         }
     }
 
-    public void bm(InputStream inputStream, String fileName,String time) throws IOException {
+    public void bm(InputStream inputStream, String fileName, String time) throws IOException {
         bmMapper.deleteAllByTime(time);
         Workbook wb = getWorkbook(inputStream, fileName);
         Sheet sheet = wb.getSheetAt(0);
@@ -210,7 +210,7 @@ public class ExcelUtil {
         }
     }
 
-    public void lq(InputStream inputStream, String fileName,String time) throws IOException {
+    public void lq(InputStream inputStream, String fileName, String time) throws IOException {
         lqMapper.deleteAllByTime(time);
         Workbook wb = getWorkbook(inputStream, fileName);
         Sheet sheet = wb.getSheetAt(0);

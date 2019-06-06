@@ -68,6 +68,7 @@ public class DataServiceImpl implements DataService {
         ssyzyBkMapper.deleteAllByTime(time);
         ssyzyLqMapper.deleteAllByTime(time);
         ssTkMapper.deleteAllByTime(time);
+        shRkMapper.deleteAllByTime(time);
         positionMapper.deleteAllByTime(time);
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
@@ -165,15 +166,15 @@ public class DataServiceImpl implements DataService {
 
     @Override
     public ResultVo getChoiceTime() {
-        List<Lq> lqs = lqMapper.findAll();
+        Sort.Order order = Sort.Order.asc("time");
+        Sort sort = Sort.by(order);
+        List<Lq> lqs = lqMapper.findAll(sort);
         Set<String> hashSet = new HashSet<>();
         for (Lq lq : lqs) {
             hashSet.add(lq.getTime());
         }
         hashSet.add("2018");
         hashSet.add("2017");
-        hashSet.add("2016");
-        hashSet.add("2015");
         return ResultVoUtil.success(hashSet);
     }
 
@@ -613,6 +614,7 @@ public class DataServiceImpl implements DataService {
             shRkVoQ.setTjD(tjDQ);
             shRkVoQ.setTjE(tjEQ);
             shRkVoQ.setTotal(totalQ);
+            shRkVos.add(shRkVoQ);
             //非全日制
             shRkVoF.setYzyA(yzyAF);
             shRkVoF.setYzyB(yzyBF);
@@ -682,8 +684,8 @@ public class DataServiceImpl implements DataService {
                 }
             }
             averageScore = total / yxcjrs;
-            excellentRate = excellentNum / yxcjrs;
-            passRate = passNum / yxcjrs;
+            excellentRate = (excellentNum + 0.0) / yxcjrs;
+            passRate = (passNum + 0.0) / yxcjrs;
             heightDifference = maxScore - minScore;
             ssZmtVo.setName(name);
             ssZmtVo.setYxcjrs(yxcjrs);
@@ -692,9 +694,9 @@ public class DataServiceImpl implements DataService {
             ssZmtVo.setMaxScore(maxScore);
             ssZmtVo.setMinScore(minScore);
             ssZmtVo.setExcellentNum(excellentNum);
-            ssZmtVo.setExcellentRate(excellentRate);
+            ssZmtVo.setExcellentRate((double) Math.round(excellentRate * 100) / 100);
             ssZmtVo.setPassNum(passNum);
-            ssZmtVo.setPassRate(passRate);
+            ssZmtVo.setPassRate((double) Math.round(passRate * 100) / 100);
             ssZmtVo.setHeightDifference(heightDifference);
             ssZmtVos.add(ssZmtVo);
         }
@@ -1389,6 +1391,4 @@ public class DataServiceImpl implements DataService {
         ssTkMapper.save(ssTk);
         return ssTkVo;
     }
-
-
 }
