@@ -5,6 +5,9 @@ import com.swpu.analyse.entity.ScaleDtoInsert;
 import com.swpu.analyse.vo.ResultVo;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
@@ -27,6 +30,17 @@ public interface DataService {
      * @date 19-05-18 下午12:14
      */
     ResultVo upload(MultipartFile file, String fileName, Integer type, String time) throws IOException;
+
+    /**
+     * 功能描述: <br>
+     * 〈下载文件〉
+     *
+     * @param type 文件类型
+     * @return
+     * @author cyg
+     * @date 19-6-6 下午10:49
+     */
+    ResultVo download(Integer type, HttpServletRequest request, HttpServletResponse response)throws IOException;
 
     /**
      * 功能描述: <br>

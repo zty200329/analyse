@@ -27,7 +27,6 @@ public class Major {
      * 专业名称
      **/
     private String name;
-
     /**
      * 接受推免生数量
      **/
@@ -36,5 +35,4 @@ public class Major {
      * 学院id
      **/
     private String departmentId;
-
 }

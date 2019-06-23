@@ -169,7 +169,9 @@ public class ExcelUtil {
                 "byny", "bkdwdm", "bkdwmc", "bkyxsm", "bkyxsmc", "bkzydm", "bkzymc", "bkxxfs",
                 "zzllmc", "wgymc", "ywk1mc", "ywk2mc"};
         HashMap<String, Integer> hashMap = getMapping(bxs, rowFirst);
+        int error = 0;
         for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+            //记录错误的行数
             Row row = sheet.getRow(r);
             if (row == null) {
                 continue;
@@ -206,6 +208,10 @@ public class ExcelUtil {
             } catch (Exception e) {
                 e.printStackTrace();
                 log.info("第{}行数据有误", (r + 1));
+                error++;
+                if (sheet.getLastRowNum() != 0 && (error / sheet.getLastRowNum()) > 0.3) {
+                    throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
+                }
             }
         }
     }
@@ -220,7 +226,7 @@ public class ExcelUtil {
                 "byzydm", "byzymc", "byny", "zzllmc", "wgymc", "ywk1mc", "ywk2dm", "ywk2mc", "zzll", "wgy",
                 "ywk1", "ywk2", "zf"};
         HashMap<String, Integer> hashMap = getMapping(lqs, rowFirst);
-        int sum = 0;
+        int error = 0;
         for (int r = 1; r <= sheet.getLastRowNum(); r++) {
             Row row = sheet.getRow(r);
             if (row == null) {
@@ -269,6 +275,10 @@ public class ExcelUtil {
                 if (!row.getCell(hashMap.get("xxfsdm")).getStringCellValue().equals("录取学习方式")) {
                     e.printStackTrace();
                     log.info("第{}行数据有误", (r + 1));
+                    error++;
+                    if (sheet.getLastRowNum() != 0 && (error / sheet.getLastRowNum()) > 0.3) {
+                        throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
+                    }
                 }
             }
             //System.out.println(lqs1.size());

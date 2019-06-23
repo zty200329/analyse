@@ -20,7 +20,7 @@ public enum ResultEnum {
     UPDATE_ERROR(6, "更新失败"),
     DELETE_ERROR(7, "删除失败"),
     FILE_IS_EMPTY(9, "文件为空"),
-    UPLOAD_FILE_FAILURE(10, "文件为空"),
+    UPLOAD_FILE_FAILURE(10, "文件上传失败"),
     AN_OBJECT_THAT_IS_NOT_SATISFIED(11, "无满足条件的对象"),
     TOKEN_NON_ERROR(13, "token信息必传"),
     TOKEN_ERROR(14, "token验证失败"),

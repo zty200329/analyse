@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Calendar;
 
@@ -43,6 +44,19 @@ public class DataController {
     public ResultVo upload(MultipartFile file, String fileName, Integer type, String time) throws IOException {
 
         return dataService.upload(file, fileName, type, time);
+    }
+
+    @PostMapping("/download")
+    @ApiOperation(value = "下载文件 " +
+            "1-(985、211、双一流建设高校汇总表)" +
+            "2-(软科排名)" +
+            "3-(专业推免生数量信息)" +
+            "4-(报名库信息)" +
+            "5-(录取库信息)")
+
+    public ResultVo download(Integer type, HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        return dataService.download(type, request, response);
     }
 
     @PostMapping("/insertGmLq")
@@ -79,7 +93,7 @@ public class DataController {
     }
 
     @PostMapping("/getChoiceTime")
-    @ApiOperation(value = "返回时间选择列表")
+    @ApiOperation(value = "时间列表")
     public ResultVo getChoiceTime() {
 
         return dataService.getChoiceTime();

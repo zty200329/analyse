@@ -35,8 +35,10 @@ public class ServiceLogger {
             if (arg == null) {
                 return "执行方法" + method + "时,检测到参数为空";
             }
-            if (arg.toString().length() < 300) {
+            if (arg.toString().length() < 200) {
                 log.info("传入参数 : " + arg);
+            } else {
+                log.info("传入参数 : " + arg.toString().substring(0, 200));
             }
         }
         return null;
@@ -44,7 +46,13 @@ public class ServiceLogger {
 
     @AfterReturning(pointcut = "service()", returning = "ret")
     public void afterReturn(Object ret) {
-        log.info("返回结果 : " + ret);
+        if (ret != null) {
+            if (ret.toString().length() < 200) {
+                log.info("返回结果 : " + ret);
+            } else {
+                log.info("返回结果 : " + ret.toString().substring(0, 200));
+            }
+        }
         log.info("-----------------------------------------------------------------------------");
     }
 }

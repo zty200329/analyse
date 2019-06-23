@@ -17,10 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityNotFoundException;
-import java.io.IOException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -63,6 +67,8 @@ public class DataServiceImpl implements DataService {
     @Autowired
     private SsZmtMapper ssZmtMapper;
 
+    private final String XNSYDX = "西南石油大学";
+
     @Override
     public ResultVo upload(MultipartFile file, String fileName,
                            Integer type, String time) throws IOException {
@@ -72,6 +78,7 @@ public class DataServiceImpl implements DataService {
         ssTkMapper.deleteAllByTime(time);
         shRkMapper.deleteAllByTime(time);
         positionMapper.deleteAllByTime(time);
+        ssZmtMapper.deleteAllByTime(time);
         if (file == null) {
             throw new AnalyseException(ResultEnum.UPLOAD_FILE_FAILURE);
         }
@@ -96,11 +103,76 @@ public class DataServiceImpl implements DataService {
             case 5:
                 excelUtil.lq(file.getInputStream(), fileName, time);
                 break;
+            //专业信息
+            case 6:
+                //todo
+                break;
             default:
                 return ResultVoUtil.error("请选择正确的文件类型");
         }
-
         return ResultVoUtil.success("数据处理成功");
+    }
+
+
+    @Override
+    public ResultVo download(Integer type, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String filePath = "classpath:templates/";
+        String fileName = "";
+        if (type == 1) {
+            fileName = "中国985工程、211工程、双一流建设高校汇总表模板.xls";
+        } else if (type == 2) {
+            fileName = "软科排名模板.xlsx";
+        } else if (type == 3) {
+            fileName = "推免生模板.xlsx";
+        } else if (type == 4) {
+            fileName = "报名库模板.xlsx";
+        } else if (type == 5) {
+            fileName = "录取库模板.xlsx";
+        } else {
+            return ResultVoUtil.error("请选择正确的文件类型");
+        }
+        File file = ResourceUtils.getFile(filePath + fileName);
+        if (file.exists()) {
+            //response.setContentType("application/force-download");// 设置强制下载不打开
+            //response.setCharacterEncoding("UTF-8");
+            //fileName = new String(fileName.getBytes("UTF-8"), "iso-8859-1");
+            new String(fileName.getBytes(), "iso8859-1");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            byte[] buffer = new byte[1024];
+            FileInputStream fis = null;
+            BufferedInputStream bis = null;
+            try {
+                fis = new FileInputStream(file);
+                bis = new BufferedInputStream(fis);
+                OutputStream os = response.getOutputStream();
+                int i = bis.read(buffer);
+                while (i != -1) {
+                    os.write(buffer, 0, i);
+                    i = bis.read(buffer);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (bis != null) {
+                    try {
+                        bis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        } else {
+            System.out.println(111);
+        }
+        return null;
     }
 
     @Override
@@ -118,7 +190,7 @@ public class DataServiceImpl implements DataService {
     public ResultVo selectGmLq(Integer type) {
         Sort.Order orderTime = Sort.Order.desc("time");
         Sort.Order orderType = Sort.Order.desc("type");
-        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        List<Sort.Order> orders = new ArrayList<>();
         orders.add(orderTime);
         orders.add(orderType);
         Sort sort = Sort.by(orders);
@@ -185,7 +257,7 @@ public class DataServiceImpl implements DataService {
         List<SsYzyBkVo> ssYzyBkVos = new ArrayList<>();
         Sort.Order orderYxsdm = Sort.Order.asc("yxsdm");
         Sort.Order orderZzmc = Sort.Order.asc("zzmc");
-        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        List<Sort.Order> orders = new ArrayList<>();
         orders.add(orderYxsdm);
         orders.add(orderZzmc);
         Sort sort = Sort.by(orders);
@@ -198,7 +270,6 @@ public class DataServiceImpl implements DataService {
             }
             return ResultVoUtil.success(ssYzyBkVos);
         }
-
         List<Bm> bms = bmMapper.findByTime(time);
         if (bms.size() == 0) {
             return ResultVoUtil.error("没有数据");
@@ -230,7 +301,7 @@ public class DataServiceImpl implements DataService {
                     otherF = 0, tmsF = 0, boyF = 0, totalF = 0;
             for (Bm bm : bms) {
                 //满足一志愿报考我校
-                if (bm.getBkdwmc().equals("西南石油大学") && bm.getBkzydm().equals(major.getId())) {
+                if (XNSYDX.equals(bm.getBkdwmc()) && bm.getBkzydm().equals(major.getId())) {
                     SsYzyBkVo ssYzyBkVo = new SsYzyBkVo();
                     //全日制
                     if (bm.getBkxxfs() == 1) {
@@ -243,7 +314,7 @@ public class DataServiceImpl implements DataService {
                             if (university.getSyl() != 0) {
                                 bySylQ++;
                             }
-                            if (university.getName().equals("西南石油大学")) {
+                            if (XNSYDX.equals(university.getName())) {
                                 if (bm.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
                                     bxYjQ++;
                                 } else {
@@ -251,14 +322,13 @@ public class DataServiceImpl implements DataService {
                                 }
                             }
                             if (university.getB985() == 0 && university.getB211() == 0 &&
-                                    university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                                    university.getSyl() == 0 && !XNSYDX.equals(university.getName())) {
                                 otherQ++;
                             }
                         } catch (EntityNotFoundException e) {
                             otherQ++;
-                            //e.printStackTrace();
                         }
-                        if (bm.getKsfsm().equals("22") || bm.getKsfsm().equals("2")) {
+                        if ("22".equals(bm.getKsfsm()) || "2".equals(bm.getKsfsm())) {
                             tmsQ++;
                         }
                         if (bm.getXbm() == 1) {
@@ -274,7 +344,7 @@ public class DataServiceImpl implements DataService {
                             if (university.getSyl() != 0) {
                                 bySylF++;
                             }
-                            if (university.getName().equals("西南石油大学")) {
+                            if (XNSYDX.equals(university.getName())) {
                                 if (bm.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
                                     bxYjF++;
                                 } else {
@@ -282,14 +352,13 @@ public class DataServiceImpl implements DataService {
                                 }
                             }
                             if (university.getB985() == 0 && university.getB211() == 0 &&
-                                    university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                                    university.getSyl() == 0 && !XNSYDX.equals(university.getName())) {
                                 otherF++;
                             }
                         } catch (EntityNotFoundException e) {
                             otherF++;
-                            //e.printStackTrace();
                         }
-                        if (bm.getKsfsm().equals("22") || bm.getKsfsm().equals("2")) {
+                        if ("22".equals(bm.getKsfsm()) || "2".equals(bm.getKsfsm())) {
                             tmsF++;
                         }
                         if (bm.getXbm() == 1) {
@@ -334,7 +403,7 @@ public class DataServiceImpl implements DataService {
         List<SsYzyLqVo> ssYzyLqVos = new ArrayList<>();
         Sort.Order orderYxsdm = Sort.Order.asc("yxsdm");
         Sort.Order orderZzmc = Sort.Order.asc("zzmc");
-        List<Sort.Order> orders = new ArrayList<Sort.Order>();
+        List<Sort.Order> orders = new ArrayList<>();
         orders.add(orderYxsdm);
         orders.add(orderZzmc);
         Sort sort1 = Sort.by(orders);
@@ -386,8 +455,8 @@ public class DataServiceImpl implements DataService {
                                 boyQ++;
                             }
                             //满足一志愿条件
-                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                            if ("10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                                 Integer[] values = judgeUniversity(yzy985211Q, yzySylQ, yzyBxYjQ, yzyBxWjQ, yzyOtherQ, lq);
                                 yzy985211Q = values[0];
                                 yzySylQ = values[1];
@@ -408,7 +477,7 @@ public class DataServiceImpl implements DataService {
                                 boyF++;
                             }
                             //满足一志愿条件
-                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) && bm.getBkxxfs() == lq.getXxfsdm()) {
+                            if ("10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) && bm.getBkxxfs().equals(lq.getXxfsdm())) {
                                 Integer[] values = judgeUniversity(yzy985211F, yzySylF, yzyBxYjF, yzyBxWjF, yzyOtherF, lq);
                                 yzy985211F = values[0];
                                 yzySylF = values[1];
@@ -547,8 +616,8 @@ public class DataServiceImpl implements DataService {
                         if (bm.getBkxxfs() == 1) {
                             totalQ++;
                             //满足一志愿条件
-                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                            if ("10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    bm.getBkxxfs().equals(lq.getXxfsdm())) {
                                 Integer[] values = shRkUniversity(yzyAQ, yzyBQ, yzyCQ, yzyDQ, yzyEQ, lq);
                                 yzyAQ = values[0];
                                 yzyBQ = values[1];
@@ -566,8 +635,8 @@ public class DataServiceImpl implements DataService {
                         } else {
                             totalF++;
                             //满足一志愿条件
-                            if (bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                                    bm.getBkxxfs() == lq.getXxfsdm()) {
+                            if ("10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                                    bm.getBkxxfs().equals(lq.getXxfsdm())) {
                                 Integer[] values = shRkUniversity(yzyAF, yzyBF, yzyCF, yzyDF, yzyEF, lq);
                                 yzyAF = values[0];
                                 yzyBF = values[1];
@@ -668,7 +737,7 @@ public class DataServiceImpl implements DataService {
         //记录平均分
         TreeSet<Double> treeSet = new TreeSet<>();
         for (Lq lq : lqs) {
-            if (!lq.getYwk2mc().equals("无")) {
+            if (!"无".equals(lq.getYwk2mc())) {
                 hashSet.add(lq.getYwk2dm() + " " + lq.getYwk2mc());
             }
         }
@@ -768,7 +837,9 @@ public class DataServiceImpl implements DataService {
         Sort sort = Sort.by(order);
         List<SsTk> ssTks = ssTkMapper.findByTime(time, sort);
         List<SsTkVo> ssTkVos = new ArrayList<>();
-        if (ssTks.size() == 5) {
+        //查询出的结果总数
+        int size = 5;
+        if (ssTks.size() == size) {
             for (SsTk ssTk : ssTks) {
                 SsTkVo ssTkVo = new SsTkVo();
                 BeanUtils.copyProperties(ssTk, ssTkVo);
@@ -794,8 +865,8 @@ public class DataServiceImpl implements DataService {
         for (Lq lq : lqs) {
             Bm bm = bmMapper.findByBmh(lq.getBmh());
             //满足调剂条件
-            if (bm == null || !bm.getBkdwdm().equals("10615") || !bm.getBkzydm().equals(lq.getZydm()) ||
-                    bm.getBkxxfs() != lq.getXxfsdm()) {
+            if (bm == null || !"10615".equals(bm.getBkdwdm()) || !bm.getBkzydm().equals(lq.getZydm()) ||
+                    !Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                 TjBkVo tjBkVo = new TjBkVo();
                 if (lq.getXxfsdm() == 1) {
                     tjBkVo.setXxfsdm("全日制");
@@ -815,20 +886,20 @@ public class DataServiceImpl implements DataService {
                     } else {
                         tjBkVo.setBkdwsyl("");
                     }
-                    if (university.getName().equals("西南石油大学")) {
+                    if (XNSYDX.equals(university.getName())) {
                         tjBkVo.setBkdwbx("1");
                     } else {
                         tjBkVo.setBkdwbx("");
                     }
                     if (university.getB985() == 0 && university.getB211() == 0 &&
-                            university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                            university.getSyl() == 0 && !XNSYDX.equals(university.getName())) {
                         tjBkVo.setBkdwother("1");
                     } else {
                         tjBkVo.setBkdwother("");
                     }
                     tjBkVo.setRkpm(university.getRkpm());
                 } catch (EntityNotFoundException e) {
-                    //e.printStackTrace();
+                    log.info("没找到学校{}", lq.getBkdwmc());
                 }
                 tjBkVos.add(tjBkVo);
             }
@@ -846,8 +917,8 @@ public class DataServiceImpl implements DataService {
         for (Lq lq : lqs) {
             Bm bm = bmMapper.findByBmh(lq.getBmh());
             //满足调剂条件
-            if (bm == null || !bm.getBkdwdm().equals("10615") || !bm.getBkzydm().equals(lq.getZydm()) ||
-                    bm.getBkxxfs() != lq.getXxfsdm()) {
+            if (bm == null || !"10615".equals(bm.getBkdwdm()) || !bm.getBkzydm().equals(lq.getZydm()) ||
+                    !Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                 TjByVo tjByVo = new TjByVo();
                 if (lq.getXxfsdm() == 1) {
                     tjByVo.setXxfsdm("全日制");
@@ -867,13 +938,13 @@ public class DataServiceImpl implements DataService {
                     } else {
                         tjByVo.setBkdwsyl("");
                     }
-                    if (university.getName().equals("西南石油大学")) {
+                    if (XNSYDX.equals(university.getName())) {
                         tjByVo.setBkdwbx("1");
                     } else {
                         tjByVo.setBkdwbx("");
                     }
                     if (university.getB985() == 0 && university.getB211() == 0 &&
-                            university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                            university.getSyl() == 0 && !XNSYDX.equals(university.getName())) {
                         tjByVo.setBkdwother("1");
                     } else {
                         tjByVo.setBkdwother("");
@@ -885,7 +956,6 @@ public class DataServiceImpl implements DataService {
                     tjByVo.setBkdwbx("");
                     tjByVo.setBkdwother("1");
                     tjByVo.setRkpm(0);
-                    //e.printStackTrace();
                 }
                 tjByVos.add(tjByVo);
             }
@@ -895,7 +965,7 @@ public class DataServiceImpl implements DataService {
 
     @Override
     public ResultVo position(String time) {
-        HashMap<String, Integer> hashMap = new HashMap<>();
+        HashMap<String, Integer> hashMap = new HashMap<>(64);
         List<Position> positions = positionMapper.findByTime(time);
         if (positions.size() != 0) {
             for (Position position : positions) {
@@ -918,7 +988,7 @@ public class DataServiceImpl implements DataService {
                 int value = hashMap.get(province.getName()) + 1;
                 hashMap.put(province.getName(), value);
             } catch (EntityNotFoundException e) {
-                //e.printStackTrace();
+                log.info("没找到学校{}", lq.getBkdwmc());
             }
         }
         for (String s : hashMap.keySet()) {
@@ -934,7 +1004,7 @@ public class DataServiceImpl implements DataService {
 
     private BasicDateAnalysisVo getMaxGirlBkMajor(List<Bm> bmsGirl, BasicDateAnalysisVo basicDateAnalysisVo) {
         List<Major> majors = majorMapper.findAll();
-        HashMap<String, Integer> hashMap = new HashMap<>();
+        HashMap<String, Integer> hashMap = new HashMap<>(32);
         for (Major major : majors) {
             hashMap.put(major.getId(), 0);
         }
@@ -992,15 +1062,15 @@ public class DataServiceImpl implements DataService {
         }
         List<Major> majors = majorMapper.findAll();
         //记录各个专业的女生录取情况
-        HashMap<String, Integer> hashMap = new HashMap<>();
+        HashMap<String, Integer> hashMap = new HashMap<>(32);
         //记录各个专业的录取学生婚姻情况
-        HashMap<String, Integer> hashMapHy = new HashMap<>();
+        HashMap<String, Integer> hashMapHy = new HashMap<>(32);
         //记录各个专业的一志愿录取人数
-        HashMap<String, Integer> hashMapYzyLq = new HashMap<>();
+        HashMap<String, Integer> hashMapYzyLq = new HashMap<>(32);
         //记录各个专业的一志愿未录取人数
-        HashMap<String, Integer> hashMapYzyNotLq = new HashMap<>();
+        HashMap<String, Integer> hashMapYzyNotLq = new HashMap<>(32);
         //记录毕业学校来的人数
-        HashMap<String, Integer> hashMapByxx = new HashMap<>();
+        HashMap<String, Integer> hashMapByxx = new HashMap<>(32);
         //初始化
         for (Major major : majors) {
             hashMap.put(major.getId(), 0);
@@ -1021,7 +1091,7 @@ public class DataServiceImpl implements DataService {
                 e.printStackTrace();
             }
             //政治面貌(党员)
-            if (lq.getZzmmdm() != null && lq.getZzmmdm().equals("01")) {
+            if (lq.getZzmmdm() != null && "01".equals(lq.getZzmmdm())) {
                 partyMember++;
             }
             //婚姻状况(人数)
@@ -1046,7 +1116,7 @@ public class DataServiceImpl implements DataService {
             //一志愿分数/调剂分数 最值
             try {
                 Bm bm = bmMapper.findByBmhAndBkdwmcAndBkzydmAndBkxxfs(lq.getBmh(),
-                        "西南石油大学", lq.getZydm(), lq.getXxfsdm());
+                        XNSYDX, lq.getZydm(), lq.getXxfsdm());
                 if (bm != null) {
                     if (maxYzy == 0d) {
                         maxYzy = lq.getZf();
@@ -1086,7 +1156,6 @@ public class DataServiceImpl implements DataService {
                 if (lq.getZf() < minTj) {
                     minTj = lq.getZf();
                 }
-                //e.printStackTrace();
             }
             //女生录取最值专业 录取女生数量
             if (lq.getXbdm() == 2) {
@@ -1094,26 +1163,12 @@ public class DataServiceImpl implements DataService {
                 hashMap.put(lq.getBkzydm(), value);
                 girl++;
             }
-            /*int maxValue = hashMap.get(majors.get(0).getId());
-            int minValue = hashMap.get(majors.get(0).getId());
-            maxGirlMajor = majors.get(0).getName();
-            minGirlMajor = majors.get(0).getName();
-            for (Major major : majors) {
-                if (hashMap.get(major.getId()) > maxValue) {
-                    maxValue = hashMap.get(major.getId());
-                    maxGirlMajor = major.getName();
-                }
-                if (hashMap.get(major.getId()) < minValue) {
-                    minValue = hashMap.get(major.getId());
-                    minGirlMajor = major.getName();
-                }
-            }*/
-            //录取男生数量
             if (lq.getXbdm() == 1) {
+                //录取男生数量
                 boy++;
             }
             //民族情况
-            if (lq.getMzdm().equals("01")) {
+            if ("01".equals(lq.getMzdm())) {
                 han++;
             } else {
                 hanNot++;
@@ -1227,14 +1282,18 @@ public class DataServiceImpl implements DataService {
         basicDateAnalysisVo.setMaxHyMajor(maxHyMajor);
         basicDateAnalysisVo.setMinHyMajor(minHyMajor);
         basicDateAnalysisVo.setMaxByUniversity(maxByUniversity);
-        if (maxYzyBlb != 0d) {
+        //排除不正常的max值
+        double notMax = 0d;
+        if (maxYzyBlb != notMax) {
             basicDateAnalysisVo.setMaxBlYzyValue(maxYzyBlb);
             basicDateAnalysisVo.setMaxBlYzyMajor(maxYzyLqMajor);
         } else {
             basicDateAnalysisVo.setMaxBlYzyValue(0d);
             basicDateAnalysisVo.setMaxBlYzyMajor("无");
         }
-        if (minYzyBlb != 1.0d) {
+        //排除不正常的min值
+        double notMin = 1.0d;
+        if (minYzyBlb != notMin) {
             basicDateAnalysisVo.setMinBlYzyValue(minYzyBlb);
             basicDateAnalysisVo.setMinBlYzyMajor(minYzyLqMajor);
         } else {
@@ -1254,7 +1313,8 @@ public class DataServiceImpl implements DataService {
             if (university.getSyl() != 0) {
                 yzySyl++;
             }
-            if (university.getName().equals("西南石油大学")) {
+            String swpu = XNSYDX;
+            if (XNSYDX.equals(university.getName())) {
                 if (lq.getByny().contains(Calendar.getInstance().get(Calendar.YEAR) + "")) {
                     yzyBxYj++;
                 } else {
@@ -1262,12 +1322,12 @@ public class DataServiceImpl implements DataService {
                 }
             }
             if (university.getB985() == 0 && university.getB211() == 0 &&
-                    university.getSyl() == 0 && !university.getName().equals("西南石油大学")) {
+                    university.getSyl() == 0 && !XNSYDX.equals(university.getName())) {
                 yzyOther++;
             }
         } catch (EntityNotFoundException e) {
             yzyOther++;
-            //e.printStackTrace();
+            log.info("没找到学校{}", lq.getBkdwmc());
         }
         values[0] = yzy985211;
         values[1] = yzySyl;
@@ -1281,11 +1341,11 @@ public class DataServiceImpl implements DataService {
         Integer[] values = new Integer[5];
         try {
             University university = excelUtil.getUniversity(lq.getBydwmc());
-            University swpu = excelUtil.getUniversity("西南石油大学");
+            University swpu = excelUtil.getUniversity(XNSYDX);
             Integer swpuPm = swpu.getRkpm();
             if (university.getRkpm() == 0) {
                 e++;
-            } else if (university.getName().equals("西南石油大学")) {
+            } else if (university.getName().equals(XNSYDX)) {
                 a++;
             } else if (university.getRkpm() < swpuPm && (swpuPm - university.getRkpm()) > 25) {
                 b++;
@@ -1296,7 +1356,7 @@ public class DataServiceImpl implements DataService {
             }
         } catch (EntityNotFoundException e1) {
             e++;
-            //e.printStackTrace();
+            log.info("没找到学校{}", lq.getBkdwmc());
         }
         values[0] = a;
         values[1] = b;
@@ -1312,14 +1372,14 @@ public class DataServiceImpl implements DataService {
         double pjYzy = 0d, fcYzy = 0d, totalScoreYzy = 0d;
         double pjTj = 0d, fcTj = 0d, totalScoreTj = 0;
         int numTj = 0;
-        if (name.equals("统考英语一") || name.equals("统考英语二")) {
+        if ("统考英语一".equals(name) || "统考英语二".equals(name)) {
             ssTkVo.setName(name + "(100)");
             for (Lq lq : lqs) {
                 if (lq.getWgymc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                         numYzy++;
                         totalScoreYzy += lq.getWgy();
                     } else {
@@ -1338,8 +1398,8 @@ public class DataServiceImpl implements DataService {
                 if (lq.getWgymc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                         countYzy += Math.pow((lq.getWgy() - pjYzy), 2);
                     } else {
                         countTj += Math.pow((lq.getWgy() - pjTj), 2);
@@ -1349,14 +1409,14 @@ public class DataServiceImpl implements DataService {
             fcYzy = countYzy / numYzy;
             fcTj = countTj / numTj;
         }
-        if (name.equals("统考数学一") || name.equals("统考数学二")) {
+        if ("统考数学一".equals(name) || "统考数学二".equals(name)) {
             ssTkVo.setName(name + "(150)");
             for (Lq lq : lqs) {
                 if (lq.getYwk1mc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                         numYzy++;
                         totalScoreYzy += lq.getYwk1();
                     } else {
@@ -1375,8 +1435,8 @@ public class DataServiceImpl implements DataService {
                 if (lq.getYwk1mc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs().equals(lq.getXxfsdm())) {
                         countYzy += Math.pow((lq.getYwk1() - pjYzy), 2);
                     } else {
                         countTj += Math.pow((lq.getYwk1() - pjTj), 2);
@@ -1386,14 +1446,14 @@ public class DataServiceImpl implements DataService {
             fcYzy = countYzy / numYzy;
             fcTj = countTj / numTj;
         }
-        if (name.equals("统考思想政治理论")) {
+        if ("统考思想政治理论".equals(name)) {
             ssTkVo.setName(name + "(100)");
             for (Lq lq : lqs) {
                 if (lq.getZzllmc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            Objects.equals(bm.getBkxxfs(), lq.getXxfsdm())) {
                         numYzy++;
                         totalScoreYzy += lq.getZzll();
                     } else {
@@ -1412,8 +1472,8 @@ public class DataServiceImpl implements DataService {
                 if (lq.getZzllmc().equals(name)) {
                     Bm bm = bmMapper.findByBmh(lq.getBmh());
                     //满足一志愿条件
-                    if (bm != null && bm.getBkdwdm().equals("10615") && bm.getBkzydm().equals(lq.getZydm()) &&
-                            bm.getBkxxfs() == lq.getXxfsdm()) {
+                    if (bm != null && "10615".equals(bm.getBkdwdm()) && bm.getBkzydm().equals(lq.getZydm()) &&
+                            bm.getBkxxfs().equals(lq.getXxfsdm())) {
                         countYzy += Math.pow((lq.getZzll() - pjYzy), 2);
                     } else {
                         countTj += Math.pow((lq.getZzll() - pjTj), 2);

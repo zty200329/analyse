@@ -12,7 +12,7 @@ import javax.persistence.Id;
 @Entity
 @Data
 public class SsZmt {
-    
+
     @Id
     private String id;
     /**
